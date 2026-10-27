@@ -95,6 +95,16 @@ class Handler(BaseHTTPRequestHandler):
         self._json(404, {"error": "Not found"})
 
     def do_POST(self):
+        # Reject cross-origin browser requests to state-changing endpoints.
+        origin = self.headers.get("Origin")
+        if origin:
+            from urllib.parse import urlsplit
+            if urlsplit(origin).netloc != self.headers.get("Host", ""):
+                self._json(403, {"error": "Cross-origin requests are not allowed."})
+                return
+        elif self.headers.get("Sec-Fetch-Site") not in (None, "same-origin", "none"):
+            self._json(403, {"error": "Cross-origin requests are not allowed."})
+            return
         if not authorized(self.headers.get("Authorization", "")):
             self.send_response(401)
             self.send_header("WWW-Authenticate", 'Basic realm="TeleBridge Toolkit"')
@@ -122,7 +132,19 @@ class Handler(BaseHTTPRequestHandler):
                 if not session_files:
                     self._json(409, {"error": "No Telegram session found. Complete first-time Telegram login from the CLI before starting from the web panel."})
                     return
-                worker = subprocess.Popen([sys.executable, str(ROOT / "main.py")], cwd=str(ROOT), stdin=subprocess.DEVNULL, stdout=open(ROOT / "logs" / "web-worker.log", "a"), stderr=subprocess.STDOUT, env=os.environ.copy(), start_new_session=True)
+                log_handle = open(ROOT / "logs" / "web-worker.log", "a", encoding="utf-8")
+                try:
+                    worker = subprocess.Popen(
+                        [sys.executable, str(ROOT / "main.py")],
+                        cwd=str(ROOT),
+                        stdin=subprocess.DEVNULL,
+                        stdout=log_handle,
+                        stderr=subprocess.STDOUT,
+                        env=os.environ.copy(),
+                        start_new_session=True,
+                    )
+                finally:
+                    log_handle.close()
                 self._json(200, {"ok": True, "message": "Forwarding worker started.", "pid": worker.pid})
             return
         with worker_lock:
