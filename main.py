@@ -8,6 +8,8 @@ from telegram_channel_duplicator.duplicator import Duplicator
 
 
 async def main():
+    os.makedirs("logs", exist_ok=True)
+
     logger.remove()
     logger.add(
         sys.stderr,
