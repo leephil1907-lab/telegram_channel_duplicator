@@ -7,4 +7,4 @@ pytz==2020.4
 PyYAML==6.0
 rsa==4.7
 Telethon>=1.27.0
-win32-setctime==1.0.3
+win32-setctime==1.0.3; sys_platform == 'win32'
