@@ -18,7 +18,7 @@ from telegram_channel_duplicator.config_controller import ConfigController
 
 ROOT = Path(__file__).resolve().parent
 PASSWORD = os.environ.get("TELEBRIDGE_WEB_PASSWORD", "")
-HOST = os.environ.get("TELEBRIDGE_WEB_HOST", "127.0.0.1")
+HOST = os.environ.get("TELEBRIDGE_WEB_HOST", "0.0.0.0" if os.environ.get("PORT") else "127.0.0.1")
 PORT = int(os.environ.get("PORT", os.environ.get("TELEBRIDGE_WEB_PORT", "8080")))
 worker = None
 worker_lock = threading.Lock()
