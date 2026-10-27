@@ -31,20 +31,26 @@ class Client:
         logger.info("Account authorization was successful")
 
     async def get_last_messages(self, channel, min_id):
-        """Return every message newer than min_id, in ascending ID order.
+        """Return all messages newer than min_id, ordered oldest to newest.
 
-        Telethon's iterator handles Telegram history pagination; unlike the old
-        GetHistoryRequest(limit=10), this does not silently cap each poll at
-        ten messages. min_id is exclusive.
+        Telethon's iterator automatically paginates. Keep reverse=False because
+        Telethon reverses the meaning of min_id/max_id in reverse mode.
         """
         messages = []
         async for message in self.client.iter_messages(
-            channel.channel_id(),
-            min_id=max(0, int(min_id)),
-            reverse=True,
+            channel.channel_id(), min_id=max(0, int(min_id))
         ):
             messages.append(message)
+        messages.sort(key=lambda message: message.id)
         return messages
+
+    async def get_latest_message_id(self, channel):
+        """Get the latest source message ID without downloading channel history."""
+        async for message in self.client.iter_messages(
+            channel.channel_id(), limit=1
+        ):
+            return int(message.id)
+        return 0
 
     async def send_message(self, *args, **kwargs):
         return await self.client.send_message(*args, **kwargs)
