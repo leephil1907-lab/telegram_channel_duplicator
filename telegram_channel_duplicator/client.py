@@ -1,11 +1,7 @@
-from telethon import TelegramClient, events
 import os
+
 from loguru import logger
-from .config_controller import ConfigController
-import pytz
-import datetime
-from telethon.tl.functions.messages import GetHistoryRequest
-import asyncio
+from telethon import TelegramClient
 
 from .destination_channel import DestinationChannel
 from .source_channel import SourceChannel
@@ -16,69 +12,57 @@ SESSIONS_DIR = "sessions"
 class Client:
     def __init__(self, config):
         self.config = config
-
-        if not os.path.exists(SESSIONS_DIR):
-            os.mkdir(SESSIONS_DIR)
+        os.makedirs(SESSIONS_DIR, exist_ok=True)
 
         self.client = TelegramClient(
             os.path.join(SESSIONS_DIR, "account_session"),
             self.config["api_id"],
             self.config["api_hash"],
         )
-
         logger.info("Account authorization")
 
     async def start(self):
-        """
-        Client launch
-        """
+        """Start the authenticated Telegram client."""
         await self.client.start(
             phone=self._get_phone,
             code_callback=self._enter_code,
             password=self._enter_password,
         )
-
-        logger.info(f"Account authorization was successful")
+        logger.info("Account authorization was successful")
 
     async def get_last_messages(self, channel, min_id):
-        history = await self.client(
-            GetHistoryRequest(
-                peer=channel.channel_id(),
-                offset_id=0,
-                offset_date=None,
-                add_offset=0,
-                limit=10,
-                max_id=0,
-                min_id=min_id,
-                hash=0,
-            )
-        )
+        """Return every message newer than min_id, in ascending ID order.
 
-        messages = history.messages[::-1]
-
+        Telethon's iterator handles Telegram history pagination; unlike the old
+        GetHistoryRequest(limit=10), this does not silently cap each poll at
+        ten messages. min_id is exclusive.
+        """
+        messages = []
+        async for message in self.client.iter_messages(
+            channel.channel_id(),
+            min_id=max(0, int(min_id)),
+            reverse=True,
+        ):
+            messages.append(message)
         return messages
 
     async def send_message(self, *args, **kwargs):
         return await self.client.send_message(*args, **kwargs)
 
     async def get_groups(self):
-        """
-        Converts string names of chats in groups to IDs
-        """
+        """Resolve configured chat names to IDs without mutating the config."""
         groups_list = []
-
-        for group in self.config["groups"]:
+        for configured_group in self.config["groups"]:
+            group = dict(configured_group)
+            group["sources"] = [
+                SourceChannel(name, await self._get_chat_id(name))
+                for name in configured_group["sources"]
+            ]
+            group["destinations"] = [
+                DestinationChannel(name, await self._get_chat_id(name))
+                for name in configured_group["destinations"]
+            ]
             groups_list.append(group)
-
-            groups_list[-1]["sources"] = [
-                SourceChannel(g, await self._get_chat_id(g))
-                for g in groups_list[-1]["sources"]
-            ]
-            groups_list[-1]["destinations"] = [
-                DestinationChannel(g, await self._get_chat_id(g))
-                for g in groups_list[-1]["destinations"]
-            ]
-
         return groups_list
 
     def _get_phone(self):
@@ -98,6 +82,7 @@ class Client:
                 return dialog.id
 
         logger.error(
-            f"Chat with the name {chat_name} was not found in the list of conversations, it will be skipped"
+            "Chat '{}' was not found in the account's conversations; skipping it",
+            chat_name,
         )
         return None
