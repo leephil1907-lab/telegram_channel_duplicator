@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101510">
+  <title>TeleBridge Toolkit — Control Room</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="/"><span class="brand-mark">T</span><span>TeleBridge<small>TOOLKIT</small></span></a>
+      <div class="nav-label">WORKSPACE</div>
+      <a class="nav active" href="/">◈ <span>Control room</span></a>
+      <div class="nav muted">⇄ <span>Channel routes</span><em>LIVE CONFIG</em></div>
+      <div class="nav muted">◷ <span>Delivery history</span><em>SQLITE</em></div>
+      <div class="side-bottom"><span class="pulse"></span> Local control panel <small>Secure session required</small></div>
+    </aside>
+    <main>
+      <header><div><div class="eyebrow">TELEGRAM AUTOMATION / WORKSPACE</div><h1>Control room<span class="dot">.</span></h1><p class="subtitle">A clearer way to manage your channel forwarding service.</p></div><div class="secure"><span>●</span> AUTHENTICATED</div></header>
+      <section class="hero">
+        <div class="hero-copy"><div class="eyebrow light">SERVICE OVERVIEW</div><h2>Your channels.<br><i>Your rules.</i></h2><p>Monitor the forwarding worker and review the routes defined in your private configuration.</p><div class="hero-actions"><button id="start" class="button primary">▶ Start forwarding</button><button id="stop" class="button secondary">■ Stop worker</button></div></div>
+        <div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="node node-center">TB</div><div class="node node-a">↗</div><div class="node node-b">↙</div><div class="connector c-one"></div><div class="connector c-two"></div><span class="art-label">MESSAGE FLOW / 01</span></div>
+      </section>
+      <div id="notice" class="notice" role="status">Connecting to the local service…</div>
+      <section class="stats">
+        <article class="stat"><div class="stat-label">WORKER STATUS</div><div class="stat-main"><span id="status-dot" class="status-dot"></span><strong id="status">Checking…</strong></div><div class="stat-foot" id="pid">Process details load here</div></article>
+        <article class="stat"><div class="stat-label">CONFIGURED ROUTES</div><div class="stat-main"><strong id="route-count">—</strong><span class="unit">route groups</span></div><div class="stat-foot">Read from your server config</div></article>
+        <article class="stat"><div class="stat-label">POLL INTERVAL</div><div class="stat-main"><strong id="delay">—</strong><span class="unit">seconds</span></div><div class="stat-foot">Configured message check delay</div></article>
+      </section>
+      <section class="section-head"><div><div class="eyebrow">ROUTING OVERVIEW</div><h2>Configured routes</h2></div><span class="tag">PRIVATE CONFIG</span></section>
+      <section id="routes" class="routes"><div class="empty">Loading route groups…</div></section>
+      <section class="security"><div class="security-icon">⌑</div><div><h3>Designed with account safety in mind</h3><p>API credentials and route names stay on the server. This dashboard never asks for your Telegram login code or Two-Step Verification password. Complete first-time Telegram session setup through the CLI before starting a worker here.</p></div></section>
+      <footer><span>TELEBRIDGE TOOLKIT</span><span>Independent project · Not affiliated with Telegram</span></footer>
+    </main>
+  </div>
+  <script src="/app.js" defer></script>
+</body>
+</html>
