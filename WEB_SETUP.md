@@ -40,3 +40,13 @@ The web panel deliberately does not collect Telegram login codes or two-step ver
 - It starts/stops a worker process and shows worker status. It is not a live delivery log and does not yet display per-message history.
 - HTTP Basic authentication is not a substitute for HTTPS. Use a reverse proxy for public deployments.
 - The dashboard process tracks the worker it starts. If the host restarts, the worker will need to be started again unless the host's process supervisor is configured to restart it.
+
+## Deploy on Railway
+
+1. Push this branch and open the pull request.
+2. In Railway, create a service from this GitHub repository and select the dashboard branch after reviewing/merging it.
+3. Add variables: `TELEBRIDGE_WEB_PASSWORD` (a long, unique secret) and `TELEBRIDGE_WEB_HOST=0.0.0.0`. Railway provides `PORT` automatically.
+4. Attach a persistent volume and mount it at the application root (or configure a persistent project data path and adjust the app paths before deployment). The service needs `config.yaml`, `sessions/`, `data/`, and `logs/` to survive redeploys.
+5. Add a Railway public domain, then test login, status, start, and stop with a private/test channel first.
+
+**Important:** Do not deploy a fresh service without securely provisioning the configuration and Telethon session. The repository does not contain these private files by design. A dashboard deployment without them will load but cannot start forwarding. The start/stop controller is intentionally simple and should be upgraded to a proper process supervisor before handling production-critical workloads.
