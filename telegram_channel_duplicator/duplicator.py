@@ -41,7 +41,19 @@ class Duplicator:
                     if source_channel.channel_id() is None:
                         continue
 
-                    checkpoint = self.checkpoints.get(source_channel.channel_id())
+                    source_id = source_channel.channel_id()
+                    if not self.checkpoints.has_checkpoint(source_id):
+                        latest_id = await self.client.get_latest_message_id(source_channel)
+                        self.checkpoints.set(source_id, latest_id)
+                        logger.info(
+                            "Initialized checkpoint for '{}' at message {}; "
+                            "existing history will not be copied on first run",
+                            source_channel,
+                            latest_id,
+                        )
+                        continue
+
+                    checkpoint = self.checkpoints.get(source_id)
                     # Re-read a small trailing window to notice recent edits, while
                     # the persistent checkpoint identifies genuinely new messages.
                     min_id = max(
@@ -68,7 +80,7 @@ class Duplicator:
 
                         # Advance only after every destination succeeded (or the
                         # message was deliberately filtered by the whitelist).
-                        self.checkpoints.set(source_channel.channel_id(), msg.id)
+                        self.checkpoints.set(source_id, msg.id)
                         checkpoint = msg.id
 
                     await self._process_edited_messages(history)
