@@ -16,10 +16,10 @@ The original Python client-bot copies content from Telegram channels, chats, and
 
 - Python 3.7 or newer (check dependency compatibility for your environment).
 - Install dependencies: `pip install -r requirements.txt`
-- Rename `config.yaml.example` to `config.yaml` and configure it.
+- Copy `config.yaml.example` to `config.yaml` and configure your Telegram API credentials and source/destination chats.
 - Run: `python main.py`
 
-Review the configuration carefully before starting. Keep API credentials and local session files private.
+Keep API credentials and local session files private. The duplicator uses an authenticated Telegram session; test with a private test channel before using production destinations.
 
 ### Account recovery guide
 
@@ -34,14 +34,23 @@ Open [recovery/index.html](recovery/index.html) in any modern browser. It is a s
 
 It links to the official [Telegram FAQ](https://telegram.org/faq) and [Telegram Support](https://telegram.org/support), plus clearly labelled independent references.
 
-### Tgback upstream reference
+### Tgback source import
 
-See [third_party/TGBACK.md](third_party/TGBACK.md) for the upstream repositories:
+The upstream [NotStatilko/tgback](https://github.com/NotStatilko/tgback) repository is pinned as a Git submodule at `third_party/tgback`. Clone this repository with submodules:
 
-- [NotStatilko/tgback](https://github.com/NotStatilko/tgback) — legacy console session-backup utility.
-- [NotStatilko/tgback-x-qt](https://github.com/NotStatilko/tgback-x-qt) — newer project referenced by the upstream Tgback README.
+```bash
+git clone --recurse-submodules https://github.com/leephil1907-lab/telegram_channel_duplicator.git
+```
 
-Tgback is **not bundled or automatically executed**. Its own documentation warns that a usable backup can grant full account access and that the cryptographic strength has not been independently audited. A session backup is effectively a credential; do not share it, upload it to this app, or send it to support issues.
+If you already cloned it without submodules:
+
+```bash
+git submodule update --init --recursive
+```
+
+Tgback is kept separate from the channel duplicator and is **not installed or automatically executed** by the main app. Its upstream README describes it as mostly legacy and warns that a usable session backup can grant full account access; it also says the cryptographic strength has not been independently audited. Read [third_party/TGBACK.md](third_party/TGBACK.md) before using it. Never upload session files, backup QR codes, login codes, or passwords to this app or an issue.
+
+The newer [TGBACK-XQt](https://github.com/NotStatilko/tgback-x-qt) project is documented as an alternative reference, not a dependency of this repository.
 
 ## Security
 
