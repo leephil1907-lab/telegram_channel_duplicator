@@ -1,24 +1,43 @@
 # Initial audit and setup plan
 
-This is a source review, not a completed runtime or security test. The original main branch has not been changed.
+This is a source review plus an initial reliability patch. The code has not yet been exercised against a real Telegram account. The original `main` branch remains unchanged.
 
-## Fixed on the integration branch
+## Completed on the integration branch
 
-- [x] Malformed `config.yaml.example`: one destination had an unclosed quote, making the sample invalid YAML.
-- [x] Fresh-checkout logging: `main.py` attempted to open `logs/debug.log` without creating the ignored `logs/` directory first.
-- [x] Empty history edge case: the first-cycle message filter indexed `messages[-1]` even when Telegram returned no messages.
-- [x] Tgback source is pinned as a Git submodule rather than copied into the main app or automatically executed.
+- [x] Correct malformed YAML in `config.yaml.example`.
+- [x] Create the logs directory before configuring file logging.
+- [x] Handle empty history responses.
+- [x] Add SQLite-backed per-source checkpoints in `data/checkpoints.sqlite3`.
+- [x] Record successful per-destination deliveries so normal retries do not resend already-recorded deliveries.
+- [x] Replace the hard-coded ten-message history request with Telethon's paginated iterator and sort results oldest-to-newest.
+- [x] Preserve first-run behavior: save the current latest message ID and do not bulk-copy old history by default.
+- [x] Validate required configuration keys and values before Telegram authentication.
+- [x] Add offline unit tests for checkpoint persistence, delivery tracking, pagination, empty history, and config validation.
+- [x] Add a GitHub Actions workflow to run unit tests on pushes and pull requests.
+- [x] Add Android Termux/Linux setup instructions and ignore local checkpoint database files.
+- [x] Pin Tgback as an isolated Git submodule; the app does not install or launch it.
 
-## High-priority next fixes
+## Important limitations to address
 
-1. **Config validation.** `ConfigController.get_config()` currently returns parsed YAML without validating required keys, list types, chat names, or numeric settings. Add friendly startup errors before authentication.
-2. **Durable message checkpoints.** Source message IDs are stored only in memory on `SourceChannel`; a restart resets them to zero and the first cycle intentionally skips existing history. Persist checkpoints if restart-safe forwarding is required.
-3. **Burst handling.** `Client.get_last_messages()` hard-codes a history limit of 10. A burst larger than the limit between polling cycles may be missed unless pagination/checkpoint logic is improved.
-4. **Delivery and edit reliability.** Add retry/backoff for transient Telegram errors, handling for flood waits, and tests for edits, media, empty messages, deleted/unsupported messages, and multiple destinations.
-5. **Tests and CI.** No test or CI configuration was found at the repository root. Add automated tests for configuration parsing and message/checkpoint behavior, then run lint/type checks.
-6. **Dependency maintenance.** Several requirements are old pinned versions; audit current supported versions and update in a controlled compatibility pass. Do not combine Tgback's Telethon pin with the app's dependency environment.
-7. **Operational setup.** Decide the intended runtime (local/Termux vs hosted Linux), Python version, process restart policy, log retention, and persistent storage for session/checkpoint data. Do not expose the authenticated session to web clients or commit it.
-8. **Compliance and permissions.** Only duplicate content you own or are authorized to redistribute. Respect channel access, privacy, copyright, Telegram limits, and destination permissions.
+1. **Runtime tests are not yet confirmed.** The test suite and dependency installation still need a successful CI run. An end-to-end test should use private test channels controlled by the operator.
+2. **Telegram and SQLite cannot share one transaction.** If Telegram accepts a send and the process crashes before SQLite records it, that one message may be duplicated on retry. The implementation reduces duplicates but cannot guarantee exactly-once delivery.
+3. **Edit tracking is currently in-memory.** The buffer used to update previously copied messages is not persisted. After a process restart, edits to older copied messages may not be propagated.
+4. **Transient errors and flood waits.** Failed destination sends are retried on a later poll, but dedicated backoff and flood-wait handling should be added. The current implementation should not be treated as production-hardened.
+5. **Media and message semantics.** Test photos, videos, albums, captions, service messages, protected content, and entities. The current send/edit path may not preserve every Telegram message type or formatting detail.
+6. **Dependency maintenance.** Some dependency pins are old. Run a controlled compatibility and vulnerability review; do not merge Tgback's separate dependency pins into the main environment.
+7. **Deployment durability.** Keep both `sessions/` and `data/checkpoints.sqlite3` on private persistent storage. Back up the checkpoint database carefully, but never commit the Telegram session or config secrets.
+
+## Test command
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Run from the repository root in the virtual environment after installing `requirements.txt`. The tests should be offline and must not prompt for Telegram credentials.
+
+## Termux/Linux setup
+
+Follow [SETUP_TERMUX.md](SETUP_TERMUX.md). Python 3.10+ is recommended for the initial compatibility target. On Termux, Android battery and background-process management may interrupt long-running polling.
 
 ## Tgback setup status
 
@@ -26,13 +45,3 @@ This is a source review, not a completed runtime or security test. The original 
 - Not integrated into the channel duplicator runtime.
 - Not installed or executed automatically.
 - Upstream warns the legacy backup tool's cryptography has not been independently audited and that backup data can grant full account access. Review [third_party/TGBACK.md](third_party/TGBACK.md) before any use.
-
-## Environment checklist
-
-- [ ] Select supported Python version and deployment target.
-- [ ] Obtain Telegram API ID/hash from the official Telegram developer portal.
-- [ ] Configure `config.yaml` locally; never commit it.
-- [ ] Confirm `sessions/` and logs are excluded from version control.
-- [ ] Use a test source and destination first.
-- [ ] Add durable state storage and a documented backup/revocation process.
-- [ ] Add tests and a CI workflow before merging.
