@@ -1,0 +1,3 @@
+[submodule "third_party/tgback"]
+	path = third_party/tgback
+	url = https://github.com/NotStatilko/tgback.git
