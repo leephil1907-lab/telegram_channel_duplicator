@@ -1,6 +1,14 @@
 const $ = (id) => document.getElementById(id);
 const notice = $("notice");
 function message(text, kind = "") { notice.textContent = text; notice.className = "notice " + kind; }
+function setLoading(loading) {
+  document.body.classList.toggle("is-loading", loading);
+  if (loading) {
+    $("status").textContent = "Loading";
+    $("route-count").textContent = "…";
+    $("delay").textContent = "…";
+  }
+}
 function renderRoutes(groups) {
   const host = $("routes");
   host.replaceChildren();
@@ -28,6 +36,7 @@ function renderRoutes(groups) {
   });
 }
 async function refresh() {
+  setLoading(true);
   try {
     const response = await fetch("/api/status", {cache:"no-store"});
     const data = await response.json();
@@ -42,6 +51,7 @@ async function refresh() {
     $("start").disabled = !!data.running;
     $("stop").disabled = !data.running;
   } catch (_) { message("Cannot reach the dashboard service. Check the server logs.", "error"); }
+  finally { setLoading(false); }
 }
 async function action(path) {
   $("start").disabled = true; $("stop").disabled = true; message("Sending request…");
