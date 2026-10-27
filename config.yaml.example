@@ -5,7 +5,9 @@ account_phone: "+790000000"
 # see https://core.telegram.org/api/obtaining_api_id
 
 api_id: 00000
-api_hash: 00000000000000
+api_hash: "replace_with_your_api_hash"
+
+checkpoint_db: data/checkpoints.sqlite3
 
 # parse messages delay in seconds
 delay: 5
