@@ -1,15 +1,14 @@
-"""Durable message checkpoints for the Telegram channel duplicator."""
+"""Durable message checkpoints and delivery records."""
 import os
 import sqlite3
 
 
 class CheckpointStore:
-    """Persist the last fully processed source-message ID per source chat."""
+    """Persist processed source IDs and successful per-destination deliveries."""
 
     def __init__(self, path=None):
         self.path = path or os.path.join("data", "checkpoints.sqlite3")
-        parent = os.path.dirname(os.path.abspath(self.path))
-        os.makedirs(parent, exist_ok=True)
+        os.makedirs(os.path.dirname(os.path.abspath(self.path)), exist_ok=True)
         self._connection = sqlite3.connect(self.path)
         self._connection.execute(
             """
@@ -17,6 +16,17 @@ class CheckpointStore:
                 source_id TEXT PRIMARY KEY,
                 last_message_id INTEGER NOT NULL DEFAULT 0
                     CHECK (last_message_id >= 0)
+            )
+            """
+        )
+        self._connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS deliveries (
+                source_id TEXT NOT NULL,
+                source_message_id INTEGER NOT NULL,
+                destination_id TEXT NOT NULL,
+                destination_message_id INTEGER,
+                PRIMARY KEY (source_id, source_message_id, destination_id)
             )
             """
         )
@@ -42,6 +52,32 @@ class CheckpointStore:
                     last_message_id = MAX(last_message_id, excluded.last_message_id)
                 """,
                 (str(source_id), message_id),
+            )
+
+    def was_delivered(self, source_id, message_id, destination_id):
+        row = self._connection.execute(
+            """
+            SELECT 1 FROM deliveries
+            WHERE source_id = ? AND source_message_id = ? AND destination_id = ?
+            """,
+            (str(source_id), int(message_id), str(destination_id)),
+        ).fetchone()
+        return row is not None
+
+    def mark_delivered(self, source_id, message_id, destination_id, destination_message_id=None):
+        with self._connection:
+            self._connection.execute(
+                """
+                INSERT OR IGNORE INTO deliveries
+                    (source_id, source_message_id, destination_id, destination_message_id)
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    str(source_id),
+                    int(message_id),
+                    str(destination_id),
+                    int(destination_message_id) if destination_message_id is not None else None,
+                ),
             )
 
     def close(self):
