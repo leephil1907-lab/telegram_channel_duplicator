@@ -4,3 +4,8 @@ venv/
 __pycache__/
 sessions/
 config.yaml
+
+# Local runtime state (never commit sessions or checkpoints)
+/data/*.sqlite3
+/data/*.sqlite3-shm
+/data/*.sqlite3-wal
