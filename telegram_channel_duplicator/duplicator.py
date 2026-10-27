@@ -125,6 +125,9 @@ class Duplicator:
 
     @staticmethod
     def _filter_old_messages(source_channel, messages):
+        if not messages:
+            return []
+
         if source_channel.last_message_id() == 0:
             source_channel.set_last_message_id(messages[-1].id)
             logger.debug("skip first cycle")
