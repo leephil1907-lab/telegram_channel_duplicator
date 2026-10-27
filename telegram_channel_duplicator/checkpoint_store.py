@@ -32,6 +32,13 @@ class CheckpointStore:
         )
         self._connection.commit()
 
+    def has_checkpoint(self, source_id):
+        row = self._connection.execute(
+            "SELECT 1 FROM source_checkpoints WHERE source_id = ?",
+            (str(source_id),),
+        ).fetchone()
+        return row is not None
+
     def get(self, source_id):
         row = self._connection.execute(
             "SELECT last_message_id FROM source_checkpoints WHERE source_id = ?",
