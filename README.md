@@ -4,25 +4,31 @@
 <h3>Telegram channel duplication tools with a separate, safety-first account recovery guide.</h3>
 </div>
 
-TeleBridge Toolkit keeps the existing channel duplicator and adds an independent recovery-resource hub. The recovery guide does not unlock accounts, bypass Telegram authentication, or collect account credentials.
+TeleBridge Toolkit combines the channel duplicator, a browser-based control room, and an independent account recovery resource hub. The recovery guide does not unlock accounts, bypass Telegram authentication, or collect account credentials.
 
-## Modules
+## Browser dashboard
 
-### Channel duplicator
+A responsive web control room is available in `webapp.py`. It shows worker status, configured route-group counts, polling delay, and provides start/stop controls for the forwarding worker.
+
+See [WEB_SETUP.md](WEB_SETUP.md) for setup and hosting. Set a strong `TELEBRIDGE_WEB_PASSWORD` before launching the dashboard. The built-in server defaults to loopback and must not be exposed directly to the public internet; use HTTPS behind a trusted reverse proxy for remote access. The dashboard does not collect Telegram login codes or two-step verification passwords.
+
+The first Telegram login/session must be created through the CLI in a trusted terminal before the web start button can launch the worker. Persist the private configuration, session files, and SQLite checkpoint database on the host.
+
+## Channel duplicator
 
 The original Python client-bot copies content from Telegram channels, chats, and private messages to configured channels.
 
-#### Installation
+### Installation
 
 - Python 3.10+ recommended; see [Termux/Linux setup](SETUP_TERMUX.md).
 - Install dependencies: `pip install -r requirements.txt`
 - Copy `config.yaml.example` to `config.yaml` and configure your Telegram API credentials and source/destination chats.
 - Run tests offline: `python -m unittest discover -s tests -v`.
-- Run: `python main.py`
+- Run the CLI worker: `python main.py`.
 
 Keep API credentials and local session files private. Source message checkpoints and successful per-destination delivery records are persisted in `data/checkpoints.sqlite3`; do not delete it unless you intentionally want to reset tracking. History is paginated through Telethon's iterator rather than capped at ten messages. On the first run for a source, the current latest message ID is saved and old history is skipped, matching the original first-run behavior. The app retries incomplete deliveries, though a crash between Telegram accepting a message and the local SQLite write can still create a duplicate. Test with private channels before using production destinations.
 
-### Account recovery guide
+## Account recovery guide
 
 Open [recovery/index.html](recovery/index.html) in any modern browser. It is a self-contained, responsive page with a guided selector for:
 
@@ -35,7 +41,7 @@ Open [recovery/index.html](recovery/index.html) in any modern browser. It is a s
 
 It links to the official [Telegram FAQ](https://telegram.org/faq) and [Telegram Support](https://telegram.org/support), plus clearly labelled independent references.
 
-### Tgback source import
+## Tgback source import
 
 The upstream [NotStatilko/tgback](https://github.com/NotStatilko/tgback) repository is pinned as a Git submodule at `third_party/tgback`. Clone this repository with submodules:
 
@@ -55,7 +61,7 @@ The newer [TGBACK-XQt](https://github.com/NotStatilko/tgback-x-qt) project is do
 
 ## Security
 
-Read [SETUP_TERMUX.md](SETUP_TERMUX.md), [AUDIT.md](AUDIT.md), [SECURITY.md](SECURITY.md), and [recovery/SECURITY.md](recovery/SECURITY.md). Never share Telegram login codes, Two-Step Verification passwords, API hashes, session files, or backup QR codes. Recovery outcomes depend on your access to the phone number, existing sessions, and Telegram's own security controls.
+Read [SETUP_TERMUX.md](SETUP_TERMUX.md), [WEB_SETUP.md](WEB_SETUP.md), [AUDIT.md](AUDIT.md), [SECURITY.md](SECURITY.md), and [recovery/SECURITY.md](recovery/SECURITY.md). Never share Telegram login codes, Two-Step Verification passwords, API hashes, session files, or backup QR codes. Recovery outcomes depend on your access to the phone number, existing sessions, and Telegram's own security controls.
 
 ## Project identity
 
