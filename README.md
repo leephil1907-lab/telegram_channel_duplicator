@@ -1,25 +1,52 @@
 <div align="center">
-<h1>Telegram channel duplicator</h1>
-<img
-  height="90"
-  width="90"
-  alt="tg logo"
-  src="https://telegram.org/img/t_logo.svg?1"
-  align="left"
-/>
-<h3>Python client-bot for copying content from telegram channels, chats and private messages to their channels.</h3>
+<h1>TeleBridge Toolkit</h1>
+<img height="90" width="90" alt="Telegram logo" src="https://telegram.org/img/t_logo.svg?1" />
+<h3>Telegram channel duplication tools with a separate, safety-first account recovery guide.</h3>
 </div>
-<br/>
-<br/>
-<br/>
 
-## Installation
+TeleBridge Toolkit keeps the existing channel duplicator and adds an independent recovery-resource hub. The recovery guide does not unlock accounts, bypass Telegram authentication, or collect account credentials.
 
-* You need [Python](https://www.python.org/) >= 3.7
-* `# pip install -r requirements.txt`
-* Rename `config.yaml.example` to `config.yaml`
-* `$ python main.py`
+## Modules
 
-## Configuration
+### Channel duplicator
 
-Before the first launch, you need to configure the program using the `config.yaml` file, all parameters are commented in it.
+The original Python client-bot copies content from Telegram channels, chats, and private messages to configured channels.
+
+#### Installation
+
+- Python 3.7 or newer (check dependency compatibility for your environment).
+- Install dependencies: `pip install -r requirements.txt`
+- Rename `config.yaml.example` to `config.yaml` and configure it.
+- Run: `python main.py`
+
+Review the configuration carefully before starting. Keep API credentials and local session files private.
+
+### Account recovery guide
+
+Open [recovery/index.html](recovery/index.html) in any modern browser. It is a self-contained, responsive page with a guided selector for:
+
+- Lost phone or SIM
+- Suspected account compromise
+- Forgotten Two-Step Verification password
+- Logged out of all devices
+- Account restrictions
+- Session backup and restore questions
+
+It links to the official [Telegram FAQ](https://telegram.org/faq) and [Telegram Support](https://telegram.org/support), plus clearly labelled independent references.
+
+### Tgback upstream reference
+
+See [third_party/TGBACK.md](third_party/TGBACK.md) for the upstream repositories:
+
+- [NotStatilko/tgback](https://github.com/NotStatilko/tgback) — legacy console session-backup utility.
+- [NotStatilko/tgback-x-qt](https://github.com/NotStatilko/tgback-x-qt) — newer project referenced by the upstream Tgback README.
+
+Tgback is **not bundled or automatically executed**. Its own documentation warns that a usable backup can grant full account access and that the cryptographic strength has not been independently audited. A session backup is effectively a credential; do not share it, upload it to this app, or send it to support issues.
+
+## Security
+
+Read [SECURITY.md](SECURITY.md) and [recovery/SECURITY.md](recovery/SECURITY.md). Never share Telegram login codes, Two-Step Verification passwords, API hashes, session files, or backup QR codes. Recovery outcomes depend on your access to the phone number, existing sessions, and Telegram's own security controls.
+
+## Project identity
+
+**TeleBridge Toolkit** is the proposed project name for the combined channel and recovery tools. This repository is an independent project and is not affiliated with Telegram.
