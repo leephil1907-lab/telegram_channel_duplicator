@@ -27,7 +27,33 @@ PAGE = r"""<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Relay — Channel Duplicator</title>
-<style>
+<style>\n
+/* TeleBridge visual system: premium charcoal, moss and lime */
+:root{
+  --bg:#101510;--surface:#171E18;--surface2:#202820;--ink:#F4F5ED;--muted:#A0AA9A;
+  --line:#303B2E;--accent:#D6F269;--accent2:#2A3524;--on-accent:#151A12;
+  --ok:#B9D86B;--warn:#E5BD72;--err:#F08E82;
+  --shadow:0 1px 2px rgba(0,0,0,.12),0 12px 32px rgba(0,0,0,.18);
+  --r:14px;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;--serif:Georgia,'Times New Roman',serif;
+}
+body[data-theme='ocean'],body[data-theme='slate'],body[data-theme='ember']{
+  --bg:#101510;--surface:#171E18;--surface2:#202820;--ink:#F4F5ED;--muted:#A0AA9A;
+  --line:#303B2E;--accent:#D6F269;--accent2:#2A3524;--on-accent:#151A12;
+  --ok:#B9D86B;--warn:#E5BD72;--err:#F08E82;--shadow:0 1px 2px rgba(0,0,0,.12),0 12px 32px rgba(0,0,0,.18);
+}
+html{scroll-behavior:smooth}
+body{animation:tb-enter .38s ease-out both}
+@keyframes tb-enter{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+button,a,input,textarea,select,.card,.panel,.stat,.route{transition:background-color .2s ease,border-color .2s ease,color .2s ease,box-shadow .2s ease,transform .2s ease,opacity .2s ease}
+button:not(:disabled):hover{transform:translateY(-1px)}
+button:disabled{cursor:wait;opacity:.62}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.loading,.loading *{cursor:progress}
+.skeleton{position:relative;overflow:hidden;background:var(--surface2);border-radius:8px;min-height:12px;color:transparent}
+.skeleton:after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,#ffffff0d,transparent);animation:tb-shimmer 1.35s infinite}
+@keyframes tb-shimmer{to{transform:translateX(100%)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 :root{
