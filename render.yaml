@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: telegram-channel-duplicator
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: TCD_SECURE_COOKIES
+        value: "1"
+      - key: TCD_DATA_DIR
+        value: /app/data
+      - key: TCD_DB
+        value: /app/data/state.db
+    disk:
+      name: telebridge-data
+      mountPath: /app/data
+      sizeGB: 1
