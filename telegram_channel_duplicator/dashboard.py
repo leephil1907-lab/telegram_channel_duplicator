@@ -50,8 +50,8 @@ button:disabled{cursor:wait;opacity:.62}
 button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .loading,.loading *{cursor:progress}
 .skeleton{position:relative;overflow:hidden;background:var(--surface2);border-radius:8px;min-height:12px;color:transparent}
-.skeleton:after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,#ffffff0d,transparent);animation:tb-shimmer 1.35s infinite}
-@keyframes tb-shimmer{to{transform:translateX(100%)}}
+.skeleton:after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:rgba(255,255,255,.07);animation:tb-shimmer 1.35s ease-in-out infinite}
+@keyframes tb-shimmer{0%,100%{opacity:.25}50%{opacity:.85}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
 *{box-sizing:border-box}
