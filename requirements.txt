@@ -1,10 +1,10 @@
-colorama==0.4.4
-loguru==0.5.3
-pyaes==1.6.1
-pyasn1==0.4.8
-python-dotenv==0.15.0
-pytz==2020.4
-PyYAML==6.0
-rsa==4.7
-Telethon>=1.27.0
-win32-setctime==1.0.3
+# Direct runtime dependencies (modern, Python 3.9+ compatible).
+# The original 2020 pins are preserved in requirements.legacy.txt.
+# Telethon pulls in pyaes, rsa and pyasn1 transitively; loguru pulls in
+# win32-setctime on Windows only.
+colorama>=0.4.6
+loguru>=0.7.2
+PyYAML>=6.0.1
+python-dotenv>=1.0
+pytz>=2024.1
+Telethon>=1.34,<2

@@ -1,6 +1,21 @@
+# upstream
 .idea/
 venv/
-/logs/*
 __pycache__/
 sessions/
 config.yaml
+
+# build / runtime state
+.venv/
+.env
+*.session
+*.session-journal
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+/state/*
+/logs/*
+/data/*
+/artifacts/verify/
+/artifacts/*.patch

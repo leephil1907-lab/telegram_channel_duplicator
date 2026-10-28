@@ -1,0 +1,33 @@
+services:
+  duplicator:
+    build: .
+    image: telegram-channel-duplicator:0.4.0
+    container_name: telegram-channel-duplicator
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      TCD_DATA_DIR: /app/data
+      # Each account is fully isolated; guests must sign in.
+      TCD_REQUIRE_LOGIN: "${TCD_REQUIRE_LOGIN:-1}"
+      TCD_ALLOW_REGISTRATION: "${TCD_ALLOW_REGISTRATION:-1}"
+      # Set to 1 when served over HTTPS (Secure; SameSite=None cookies).
+      TCD_SECURE_COOKIES: "${TCD_SECURE_COOKIES:-0}"
+      # Optional extra shared secret; open /?token=... if set.
+      TCD_TOKEN: "${TCD_TOKEN:-}"
+      # Optional server-wide Telegram credentials. Users can also paste their
+      # own values into their private config.yaml in the dashboard.
+      TG_PHONE: "${TG_PHONE:-}"
+      TG_API_ID: "${TG_API_ID:-}"
+      TG_API_HASH: "${TG_API_HASH:-}"
+    volumes:
+      - duplicator-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; r=urllib.request.urlopen('http://127.0.0.1:8000/api/health',timeout=3); sys.exit(0 if r.status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+volumes:
+  duplicator-data:

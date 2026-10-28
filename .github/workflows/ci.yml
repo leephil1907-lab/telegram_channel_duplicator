@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Verify dependency tree
+        run: python -m pip check
+      - name: Compile
+        run: python -m compileall -q telegram_channel_duplicator
+      - name: Test (unit + multi-user HTTP + container-style end-to-end)
+        run: python -m pytest -q
+      - name: Build sdist + wheel
+        run: python -m build --outdir artifacts
+      - name: Verify wheel from a clean target
+        run: |
+          python -m pip install --no-deps --target /tmp/wheelcheck artifacts/*.whl
+          cd /tmp && PYTHONPATH=/tmp/wheelcheck python -m telegram_channel_duplicator --version
+      - uses: actions/upload-artifact@v4
+        if: matrix.python-version == '3.13'
+        with:
+          name: dist
+          path: artifacts/*
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t telegram-channel-duplicator:ci .
+      - name: Smoke test the container
+        run: |
+          docker run -d --name tcd-ci -p 8000:8000 -e TCD_REQUIRE_LOGIN=1 telegram-channel-duplicator:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/api/health >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8000/api/health
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/status)" = "401"
+          docker logs tcd-ci
+          docker rm -f tcd-ci

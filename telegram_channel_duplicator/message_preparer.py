@@ -6,11 +6,10 @@ class MessagePreparer:
         pass
 
     def check_whitelist(self, message, whitelist):
-        if not len(whitelist):
+        # Media-only posts have message.message == None; treat them as empty text
+        # instead of raising AttributeError (upstream bug).
+        if not whitelist:
             return True
 
-        for filter_text in whitelist:
-            if filter_text.lower() in message.message.lower():
-                return True
-
-        return False
+        text = (getattr(message, "message", None) or "").lower()
+        return any(str(word).lower() in text for word in whitelist)

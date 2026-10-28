@@ -7,8 +7,11 @@ class SendingMessageBuffer:
         self._max_len = max_len
 
     def put(self, source_message, destination_channel):
+        # edit_message_checker_limit: 0 means edit tracking is disabled.
+        if self._max_len <= 0:
+            return
 
-        if len(self._buf) + 1 > self._max_len:
+        while self._buf and len(self._buf) + 1 > self._max_len:
             self._buf.popleft()
 
         self._buf.append((source_message, destination_channel))
@@ -26,10 +29,4 @@ class SendingMessageBuffer:
         ]
 
     def remove_by_destination_message(self, destination_message):
-        new_q = deque()
-
-        for m in self._buf:
-            if m[1] != destination_message:
-                new_q.append(m)
-
-        self._buf = new_q
+        self._buf = deque(m for m in self._buf if m[1] != destination_message)

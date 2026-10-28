@@ -1,25 +1,66 @@
 <div align="center">
 <h1>Telegram channel duplicator</h1>
-<img
-  height="90"
-  width="90"
-  alt="tg logo"
-  src="https://telegram.org/img/t_logo.svg?1"
-  align="left"
-/>
-<h3>Python client-bot for copying content from telegram channels, chats and private messages to their channels.</h3>
+<h3>Multi-user Python/Telethon client-bot for mirroring Telegram channels, groups and private chats.</h3>
 </div>
-<br/>
-<br/>
-<br/>
 
-## Installation
+A real-only build: **no demo mode, no simulator, no sample configs, no auto-start and no
+pre-approved actions.** Every account has a private workspace and must supply its own
+configuration and explicitly confirm every state-changing action.
 
-* You need [Python](https://www.python.org/) >= 3.7
-* `# pip install -r requirements.txt`
-* Rename `config.yaml.example` to `config.yaml`
-* `$ python main.py`
+## Requirements
+
+- Python >= 3.9
+- A Telegram **user** API `api_id` / `api_hash` from https://my.telegram.org/apps
+- Membership in the source chats and post permission in the destination chats
+
+## Install / build
+
+```bash
+./build.sh                      # venv + deps + tests + wheel/sdist in artifacts/
+.venv/bin/telegram-channel-duplicator --version
+.venv/bin/telegram-channel-duplicator --check     # validate your config offline
+.venv/bin/telegram-channel-duplicator             # run in the foreground (single local user)
+.venv/bin/telegram-channel-duplicator --serve     # multi-user control panel on :8000
+docker compose up --build -d                     # containerised, persistent volume
+```
 
 ## Configuration
 
-Before the first launch, you need to configure the program using the `config.yaml` file, all parameters are commented in it.
+No `config.yaml`, `.env`, template or example file is shipped. Create your own
+`config.yaml` (mode 0600) or paste it into the dashboard's private editor. Required keys:
+
+```yaml
+account_phone: "<your phone in international format>"
+api_id: <your integer api_id>
+api_hash: "<your api hash>"
+delay: 5                        # poll interval in seconds
+edit_message_checker_limit: 10  # 0 disables edit mirroring
+groups:
+  - name: <any label>
+    sources: ["<exact source chat title>"]
+    destinations: ["<exact destination chat title>"]
+    whitelist: []               # optional keywords
+```
+
+`${VAR}` / `${VAR:-default}` placeholders are expanded from the environment or a local
+`.env`. Chat titles must exactly match the titles visible in your Telegram dialog list.
+
+## Multi-user isolation
+
+Each account — and each anonymous browser — gets `data/workspaces/<id>/` containing a
+private `config.yaml`, SQLite database, Telegram session and bot thread. Nobody can see
+another user's config, counters, events or session. Salted PBKDF2 password hashes and
+opaque bearer tokens protect accounts; `TCD_REQUIRE_LOGIN=1` enforces sign-in.
+
+Nothing starts automatically. **Start bot**, **Stop**, **Save config** and **Reset state**
+all require an explicit confirmation in the UI and an explicit `confirm: true` in the API.
+A **dry run** option polls without sending anything, and must be checked deliberately.
+
+## Docs
+
+- [BUILD.md](BUILD.md) — build, verification and configuration details
+- [ENHANCEMENTS.md](ENHANCEMENTS.md) — architecture and change history
+- [DOCKER.md](DOCKER.md) — deployment, HTTPS, backups and scaling
+
+> Only mirror chats you own or have permission to copy, and respect Telegram's Terms of Service.
+> Upstream declares no license; redistribution rights are unclear.

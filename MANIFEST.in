@@ -1,0 +1,5 @@
+include README.md BUILD.md ENHANCEMENTS.md DOCKER.md
+include requirements.txt requirements.legacy.txt
+include build.sh Makefile
+include Dockerfile docker-compose.yml .dockerignore
+recursive-include tests *.py
