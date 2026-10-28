@@ -27,7 +27,7 @@ PAGE = r"""<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Relay — Channel Duplicator</title>
-<style>\n
+<style>
 /* TeleBridge visual system: premium charcoal, moss and lime */
 :root{
   --bg:#101510;--surface:#171E18;--surface2:#202820;--ink:#F4F5ED;--muted:#A0AA9A;
