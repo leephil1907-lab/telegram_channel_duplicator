@@ -26,168 +26,274 @@ PAGE = r"""<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Duplicator · Control Panel</title>
+<title>Relay — Channel Duplicator</title>
 <style>
-:root{
-  --bg:#080d1c; --bg2:#101a38; --panel:rgba(20,29,54,.82); --panel2:rgba(31,43,76,.7);
-  --line:rgba(132,158,231,.16); --txt:#eaf0ff; --muted:#8f9ec4;
-  --accent:#6c8cff; --accent2:#a06bff; --cyan:#45d6f5;
-  --ok:#3ddc97; --warn:#ffc857; --err:#ff6b81; --shadow:0 18px 45px rgba(0,0,0,.35);
-}
-body.light{
-  --bg:#eef2ff; --bg2:#dfe7ff; --panel:rgba(255,255,255,.9); --panel2:rgba(240,244,255,.9);
-  --line:rgba(45,66,130,.14); --txt:#16203d; --muted:#5f6d91;
-  --accent:#4a67e8; --accent2:#8a4ce0; --cyan:#0f9fc4;
-  --ok:#14855a; --warn:#a9740a; --err:#c8384f; --shadow:0 14px 34px rgba(42,60,110,.16);
-}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;min-height:100vh;color:var(--txt);font:15px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  background:radial-gradient(1100px 620px at 8% -12%,var(--bg2) 0%,var(--bg) 58%) fixed;
-  transition:background-color .45s ease,color .45s ease;padding:26px}
-body,section,.card,button,input,textarea,pre,.pill,.tag,.ev,.modal{transition:background-color .4s ease,color .4s ease,border-color .4s ease,box-shadow .3s ease,transform .25s ease,opacity .3s ease}
-.wrap{max-width:1200px;margin:0 auto;position:relative}
-.view{transition:opacity .4s cubic-bezier(.22,1,.36,1),transform .4s cubic-bezier(.22,1,.36,1)}
-.view.hidden{opacity:0;transform:translateY(16px);pointer-events:none;position:absolute;left:0;right:0;top:0}
-h1{font-size:23px;margin:0;letter-spacing:-.02em;font-weight:760}
-h2{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin:0 0 15px;font-weight:700}
-.sub{color:var(--muted);font-size:13px;margin-top:3px}
-header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:22px}
-.brand{display:flex;align-items:center;gap:12px}
-.logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));
-  display:grid;place-items:center;font-weight:800;color:#fff;box-shadow:0 8px 22px rgba(108,140,255,.35);font-size:18px}
-.spacer{flex:1}
-.pill{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:999px;font-size:12px;font-weight:700;
-  background:var(--panel2);border:1px solid var(--line);white-space:nowrap}
-.pill.running{color:var(--ok);border-color:rgba(61,220,151,.4)}
-.pill.error{color:var(--err);border-color:rgba(255,107,129,.4)}
-.dot{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
-.running .dot{animation:pulse 1.7s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 currentColor}50%{opacity:.55;box-shadow:0 0 0 5px transparent}}
-button{cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--txt);padding:9px 15px;
-  border-radius:10px;font-weight:650;font-size:13px;transition:transform .2s ease,box-shadow .2s ease,background-color .3s,border-color .3s,color .3s}
-button:hover:not(:disabled){transform:translateY(-2px);border-color:var(--accent);box-shadow:0 8px 20px rgba(80,110,220,.22)}
-button:active:not(:disabled){transform:translateY(0) scale(.98)}
-button:disabled{opacity:.45;cursor:not-allowed}
-button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-button.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff;
-  box-shadow:0 8px 22px rgba(108,140,255,.28)}
-button.danger{color:var(--err)}
-button.ghost{background:transparent}
-button.small{padding:6px 11px;font-size:12px}
-.check{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);border:1px solid var(--line);background:var(--panel2);padding:9px 13px;border-radius:10px;cursor:pointer}
-.check input{width:auto;margin:0;accent-color:var(--accent)}
-.iconbtn{width:36px;height:36px;display:grid;place-items:center;padding:0;border-radius:10px;font-size:16px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:20px}
-.card,section{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:17px;backdrop-filter:blur(14px);box-shadow:var(--shadow)}
-.card:hover{transform:translateY(-3px);border-color:rgba(108,140,255,.42)}
-.card .n{font-size:30px;font-weight:780;letter-spacing:-.03em;line-height:1.1;
-  background:linear-gradient(120deg,var(--txt),var(--accent));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-.card .l{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.09em;margin-top:5px;font-weight:650}
-.cols{display:grid;grid-template-columns:1.4fr 1fr;gap:18px}
-@media(max-width:900px){.cols{grid-template-columns:1fr}body{padding:16px}}
-section{margin-bottom:18px}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
-th{color:var(--muted);font-weight:650;font-size:10px;text-transform:uppercase;letter-spacing:.08em}
-.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
-.tag{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:2px 7px;margin:2px 4px 2px 0;font-size:11px}
-.muted{color:var(--muted);font-size:12px}
-.events{max-height:340px;overflow:auto}
-.ev{display:grid;grid-template-columns:70px 80px 1fr;gap:8px;padding:7px 2px;border-bottom:1px solid var(--line);font-size:12.5px;
-  animation:fadein .45s ease both}
-@keyframes fadein{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
-.ev .t{color:var(--muted)} .ev .k{font-weight:700;color:var(--accent)}
-.ev.ERROR .k{color:var(--err)} .ev.WARNING .k{color:var(--warn)} .ev.SUCCESS .k{color:var(--ok)}
-pre{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;max-height:150px;overflow:auto;color:var(--muted);font-size:11.5px;margin:0 0 12px}
-textarea,input{width:100%;background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px 12px;
-  font-family:ui-monospace,monospace;font-size:12px}
-textarea{min-height:150px;resize:vertical;line-height:1.5}
-input{font-family:inherit;font-size:14px;margin-bottom:11px}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.msg{font-size:12.5px;min-height:18px}
-.err{color:var(--err)} .ok{color:var(--ok)} .warn{color:var(--warn)}
-.spin{display:inline-block;width:11px;height:11px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-1px;margin-right:6px}
+:root{
+  --bg:#F4F1EA;--surface:#FFFFFF;--surface2:#EBE6DB;--ink:#1B1A17;--muted:#6C685F;
+  --line:#DAD4C7;--accent:#A83F1C;--accent2:#F3E1D7;--on-accent:#FFFFFF;
+  --ok:#2E7A55;--warn:#A97615;--err:#AE3737;
+  --shadow:0 1px 2px rgba(27,26,23,.05),0 8px 24px rgba(27,26,23,.04);
+  --r:10px;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;--serif:Georgia,'Times New Roman',serif;
+}
+body[data-theme='ocean']{--bg:#EEF3F7;--surface:#FFFFFF;--surface2:#E1EAF2;--ink:#12253A;--muted:#5B6C7E;--line:#CFDCE8;--accent:#12639E;--accent2:#DAEAF7;--on-accent:#FFFFFF;--ok:#1E7A5C;--warn:#9A6A12;--err:#B23A45;--shadow:0 1px 2px rgba(18,37,58,.05),0 8px 24px rgba(18,37,58,.05)}
+body[data-theme='slate']{--bg:#14181D;--surface:#1C222A;--surface2:#242C36;--ink:#EDF1F5;--muted:#99A4B1;--line:#323B46;--accent:#5CC6AC;--accent2:#223A38;--on-accent:#0B1512;--ok:#63C79B;--warn:#D8AC5A;--err:#E68080;--shadow:0 1px 2px rgba(0,0,0,.22),0 8px 24px rgba(0,0,0,.18)}
+body[data-theme='ember']{--bg:#191510;--surface:#221C16;--surface2:#2C2419;--ink:#F6EFE6;--muted:#AC9D89;--line:#3B3125;--accent:#E7A24A;--accent2:#3A2D18;--on-accent:#1A1206;--ok:#84C37E;--warn:#E0B04A;--err:#E0776B;--shadow:0 1px 2px rgba(0,0,0,.25),0 8px 24px rgba(0,0,0,.2)}
+body.light{color-scheme:light}
+body:not(.light){color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;transition:background-color .45s cubic-bezier(.4,0,.2,1),color .45s cubic-bezier(.4,0,.2,1)}
+a{color:inherit;text-decoration:none}
+button{font:inherit;cursor:pointer}
+.hidden{display:none!important}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+
+.shell{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+.side{position:sticky;top:0;height:100vh;background:var(--surface);border-right:1px solid var(--line);padding:26px 18px;display:flex;flex-direction:column;transition:background-color .45s cubic-bezier(.4,0,.2,1),border-color .45s}
+.brand{display:flex;align-items:center;gap:11px;padding:0 8px}
+.brand svg{width:34px;height:34px;color:var(--accent);flex:none}
+.brand-name{font-family:var(--serif);font-size:23px;line-height:1;font-weight:600;letter-spacing:-.02em}
+.brand-sub{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+nav{display:flex;flex-direction:column;gap:3px;margin-top:36px}
+.nav{position:relative;display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:8px;color:var(--muted);font-size:13px;font-weight:550;border:1px solid transparent;transition:background .22s cubic-bezier(.4,0,.2,1),color .22s,border-color .22s,transform .22s}
+.nav svg{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav:hover{background:var(--surface2);color:var(--ink);transform:translateX(2px)}
+.nav.on{background:var(--accent2);color:var(--accent);border-color:var(--line)}
+.nav.on::before{content:'';position:absolute;left:-18px;top:50%;transform:translateY(-50%);width:3px;height:20px;background:var(--accent);border-radius:0 3px 3px 0}
+.side-foot{margin-top:auto}
+.side-label{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:11px}
+.swatches{display:flex;gap:9px;align-items:center}
+.swatch{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);background:var(--sw);padding:0;transition:transform .2s cubic-bezier(.4,0,.2,1),box-shadow .2s}
+.swatch:hover{transform:scale(1.14)}
+.swatch.on{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)}
+.side-note{margin-top:22px;padding:11px 12px;border:1px dashed var(--line);border-radius:8px;font-size:11px;color:var(--muted);line-height:1.6}
+.side-note b{display:block;color:var(--ink);font-family:var(--mono);font-size:10.5px;font-weight:600;margin-top:3px;word-break:break-all}
+
+.main{min-width:0}
+.top{position:sticky;top:0;z-index:20;height:64px;background:var(--surface);border-bottom:1px solid var(--line);padding:0 32px;display:flex;align-items:center;justify-content:space-between;gap:16px;transition:background-color .45s cubic-bezier(.4,0,.2,1)}
+.crumb{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.crumb b{color:var(--ink);font-weight:600}
+.crumb i{font-style:normal;margin:0 9px;color:var(--line)}
+.top-right{display:flex;align-items:center;gap:9px}
+.live{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);margin-right:6px;white-space:nowrap}
+.live i{width:6px;height:6px;border-radius:50%;background:var(--ok);animation:pulse 2.4s infinite}
+.content{padding:30px 32px 44px;max-width:1420px}
+
+.banner{display:flex;align-items:center;gap:12px;background:var(--accent2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:var(--r);padding:12px 16px;margin-bottom:24px;font-size:12.5px;line-height:1.5}
+.banner .spacer{flex:1}
+
+.hero{display:grid;grid-template-columns:1.35fr 1fr;gap:32px;align-items:end;padding:6px 0 28px;margin-bottom:26px;border-bottom:1px solid var(--line)}
+.eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-family:var(--serif);font-size:44px;line-height:1.08;letter-spacing:-.025em;font-weight:600;margin:12px 0 8px}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 18px;min-height:20px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:100px;padding:6px 13px;font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;transition:background .3s,border-color .3s}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex:none}
+.chip.running .dot{background:var(--ok);animation:pulse 1.8s infinite}
+.chip.error .dot{background:var(--err)}
+.chip.ghost{background:transparent;color:var(--muted)}
+.hero-actions{display:flex;flex-direction:column;gap:15px;align-items:flex-end}
+.switch{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);cursor:pointer;user-select:none}
+.switch input{appearance:none;width:36px;height:20px;border-radius:100px;background:var(--surface2);border:1px solid var(--line);position:relative;cursor:pointer;flex:none;transition:background .25s cubic-bezier(.4,0,.2,1),border-color .25s}
+.switch input::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--muted);transition:transform .25s cubic-bezier(.4,0,.2,1),background .25s}
+.switch input:checked{background:var(--accent);border-color:var(--accent)}
+.switch input:checked::after{transform:translateX(16px);background:var(--on-accent)}
+.row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:9px 15px;border-radius:8px;font-size:12.5px;font-weight:600;white-space:nowrap;transition:transform .18s cubic-bezier(.4,0,.2,1),box-shadow .18s,border-color .18s,color .18s,background .18s}
+.btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{box-shadow:0 6px 18px rgba(0,0,0,.16)}
+.btn.subtle{background:transparent;color:var(--muted)}
+.btn.subtle:hover{color:var(--ink)}
+.btn.danger:hover{border-color:var(--err);color:var(--err)}
+.btn:disabled{opacity:.55;cursor:wait;transform:none}
+.btn.small{padding:7px 12px;font-size:11.5px}
+button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:26px}
+.metric{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 16px 13px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .22s cubic-bezier(.4,0,.2,1),border-color .22s,background-color .45s}
+.metric:hover{transform:translateY(-2px);border-color:var(--accent)}
+.metric .k{font-size:10px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted)}
+.metric .n{font-family:var(--mono);font-size:27px;font-weight:600;letter-spacing:-.045em;line-height:1;margin-top:9px}
+.metric .bar{height:3px;background:var(--surface2);border-radius:2px;margin-top:15px;overflow:hidden}
+.metric .bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:2px;transition:width .65s cubic-bezier(.4,0,.2,1)}
+.metric.is-err .n{color:var(--err)}
+
+.cols{display:grid;grid-template-columns:1.55fr 1fr;gap:18px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:20px;margin-bottom:18px;scroll-margin-top:80px;transition:background-color .45s cubic-bezier(.4,0,.2,1)}
+.panel-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.panel h2{font-size:15px;margin:0;font-weight:650;letter-spacing:-.01em}
+.panel-meta{font-family:var(--mono);font-size:10.5px;color:var(--muted);white-space:nowrap}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted);font-weight:600;padding:0 10px 10px 0;border-bottom:1px solid var(--line)}
+td{padding:11px 10px 11px 0;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td b{font-weight:650}
+.tag{display:inline-block;background:var(--surface2);border:1px solid var(--line);border-radius:5px;padding:2px 7px;font-family:var(--mono);font-size:10.5px;margin:2px 4px 2px 0}
+#configPreview{background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:12px;font:11.5px/1.6 var(--mono);white-space:pre-wrap;word-break:break-word;max-height:150px;overflow:auto;color:var(--muted);margin:0 0 12px}
+textarea{width:100%;min-height:180px;resize:vertical;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:12px;font:12px/1.6 var(--mono);transition:border-color .2s cubic-bezier(.4,0,.2,1)}
+textarea:focus{border-color:var(--accent)}
+.msg{font-size:12px;margin-left:4px}
+.msg.ok{color:var(--ok)}.msg.err{color:var(--err)}.msg.warn{color:var(--warn)}
+.hint{font-size:11.5px;color:var(--muted);line-height:1.65;margin:12px 0 0}
+.timeline{max-height:540px;overflow:auto}
+.ev{display:grid;grid-template-columns:62px 1fr;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);animation:fadeUp .35s cubic-bezier(.4,0,.2,1) both}
+.ev:last-child{border-bottom:0}
+.ev .t{font-family:var(--mono);font-size:10px;color:var(--muted);padding-top:3px}
+.ev .body{min-width:0}
+.ev .k{display:inline-block;font-size:9px;text-transform:uppercase;letter-spacing:.11em;color:var(--accent);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+.ev .tx{display:block;margin-top:6px;font-size:12px;color:var(--ink);word-break:break-word;line-height:1.5}
+.ev.ERROR .k{color:var(--err);border-color:var(--err)}
+.ev.SUCCESS .k{color:var(--ok)}
+.ev.WARNING .k{color:var(--warn)}
+footer{color:var(--muted);font-size:11px;padding-top:8px;border-top:1px solid var(--line);margin-top:6px;line-height:1.7}
+
+.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:20px}
+.gate-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:36px;max-width:420px;width:100%;box-shadow:var(--shadow)}
+.gate-card h2{font-family:var(--serif);font-size:27px;margin:18px 0 8px;font-weight:600;letter-spacing:-.02em}
+.gate-card p{color:var(--muted);font-size:13px;margin:0 0 22px;line-height:1.6}
+.overlay{position:fixed;inset:0;background:rgba(18,16,13,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+.overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:26px;width:min(420px,100%);box-shadow:0 24px 70px rgba(0,0,0,.28);animation:pop .28s cubic-bezier(.4,0,.2,1)}
+.modal h3{font-family:var(--serif);font-size:23px;margin:0 0 4px;font-weight:600}
+.modal p{color:var(--muted);font-size:12.5px;margin:0 0 18px;line-height:1.55}
+.tabs{display:flex;border:1px solid var(--line);border-radius:8px;padding:3px;margin-bottom:16px;background:var(--surface2)}
+.tabs button{flex:1;border:0;background:transparent;color:var(--muted);padding:8px;border-radius:6px;font-size:12px;font-weight:600;transition:background .2s,color .2s,box-shadow .2s}
+.tabs button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.modal input{width:100%;margin-bottom:10px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--ink);font-size:13px}
+#toast{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:9px;z-index:80}
+.toast{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:11px 15px;font-size:12.5px;box-shadow:var(--shadow);min-width:220px;max-width:360px;line-height:1.5;animation:slideIn .3s cubic-bezier(.4,0,.2,1);transition:opacity .3s,transform .3s}
+.toast.ok{border-left-color:var(--ok)}.toast.err{border-left-color:var(--err)}
+.spin{display:inline-block;width:11px;height:11px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite;margin-right:6px;vertical-align:-1px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.banner{background:linear-gradient(90deg,rgba(255,200,87,.13),rgba(160,107,255,.1));border:1px solid rgba(255,200,87,.3);
-  border-radius:12px;padding:11px 15px;margin-bottom:18px;font-size:13px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.overlay{position:fixed;inset:0;background:rgba(4,8,20,.68);backdrop-filter:blur(6px);display:grid;place-items:center;z-index:50;
-  opacity:0;pointer-events:none;transition:opacity .35s ease;padding:20px}
-.overlay.show{opacity:1;pointer-events:auto}
-.modal{width:min(420px,100%);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:26px;
-  box-shadow:var(--shadow);transform:translateY(22px) scale(.97);transition:transform .4s cubic-bezier(.22,1,.36,1);backdrop-filter:blur(20px)}
-.overlay.show .modal{transform:none}
-.modal h3{margin:0 0 4px;font-size:20px} .modal p{color:var(--muted);font-size:13px;margin:0 0 18px}
-.tabs{display:flex;gap:6px;background:var(--bg);border-radius:10px;padding:4px;margin-bottom:16px}
-.tabs button{flex:1;border:0;background:transparent;padding:8px;font-size:13px}
-.tabs button.on{background:var(--accent);color:#fff;box-shadow:0 4px 12px rgba(108,140,255,.3)}
-#toast{position:fixed;right:22px;bottom:22px;z-index:60;display:flex;flex-direction:column;gap:9px;align-items:flex-end}
-.toast{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:11px 16px;
-  box-shadow:var(--shadow);font-size:13px;animation:slidein .35s cubic-bezier(.22,1,.36,1) both;max-width:330px}
-.toast.err{border-left-color:var(--err)} .toast.ok{border-left-color:var(--ok)}
-@keyframes slidein{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
-footer{text-align:center;color:var(--muted);font-size:11.5px;margin:24px 0 6px}
-@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.97) translateY(8px)}to{opacity:1;transform:none}}
+@keyframes slideIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
+@media(max-width:1180px){.metrics{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:980px){
+  .shell{grid-template-columns:1fr}
+  .side{position:static;height:auto;flex-direction:row;align-items:center;gap:14px;padding:14px 18px;border-right:0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  nav{flex-direction:row;margin:0;gap:4px;flex-wrap:wrap}
+  .nav.on::before{display:none}
+  .side-foot{display:none}
+  .top{padding:0 18px}.content{padding:20px 18px 34px}
+  .hero{grid-template-columns:1fr;gap:20px;align-items:start}
+  .hero-actions{align-items:flex-start}
+  .cols{grid-template-columns:1fr}
+  h1{font-size:34px}
+}
+@media(max-width:560px){.metrics{grid-template-columns:repeat(2,1fr)}.live{display:none}h1{font-size:29px}.crumb{display:none}}
 </style>
 </head>
-<body>
-<div class="wrap">
-  <div id="gate" class="view hidden" style="text-align:center;padding:80px 20px">
-    <div class="logo" style="margin:0 auto 18px;width:56px;height:56px;font-size:24px">D</div>
-    <h1>Sign in to your workspace</h1>
-    <p class="sub">Each account has a private config, database and Telegram session.</p>
-    <button class="primary" style="margin-top:20px" onclick="openAuth()">Sign in / Create account</button>
-  </div>
+<body data-theme="paper" class="light">
 
-  <div id="app" class="view">
-    <header>
-      <div class="brand"><div class="logo">D</div><div><h1>Channel Duplicator</h1><div class="sub" id="sub">Connecting…</div></div></div>
-      <div class="spacer"></div>
-      <span class="pill" id="state">—</span>
-      <span class="pill" id="mode">—</span>
-      <span class="pill mono" id="who">…</span>
-      <button class="iconbtn ghost" id="theme" title="Toggle theme" onclick="toggleTheme()">☾</button>
-      <button class="small" id="authBtn" onclick="openAuth()">Account</button>
-      <button class="small ghost" id="logoutBtn" style="display:none" onclick="logout()">Sign out</button>
+<div id="gate" class="gate hidden">
+  <div class="gate-card">
+    <div class="brand">
+      <svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect x="3.5" y="3.5" width="24" height="24" rx="5" stroke="currentColor" stroke-width="2.3"/><rect x="12.5" y="12.5" width="24" height="24" rx="5" fill="currentColor" fill-opacity=".15" stroke="currentColor" stroke-width="2.3"/><path d="M18 24h12m-4.5-4.5L30 24l-4.5 4.5" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><div class="brand-name">Relay</div><div class="brand-sub">channel duplicator</div></div>
+    </div>
+    <h2>Sign in to continue</h2>
+    <p>This server requires an account. Each account has a completely private workspace — config, sessions and history are never shared.</p>
+    <div class="row"><button class="btn primary" onclick="openAuth('login')">Sign in</button><button class="btn" onclick="openAuth('register')">Create account</button></div>
+  </div>
+</div>
+
+<div id="app" class="shell">
+  <aside class="side">
+    <div class="brand">
+      <svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect x="3.5" y="3.5" width="24" height="24" rx="5" stroke="currentColor" stroke-width="2.3"/><rect x="12.5" y="12.5" width="24" height="24" rx="5" fill="currentColor" fill-opacity=".15" stroke="currentColor" stroke-width="2.3"/><path d="M18 24h12m-4.5-4.5L30 24l-4.5 4.5" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><div class="brand-name">Relay</div><div class="brand-sub">channel duplicator</div></div>
+    </div>
+    <nav>
+      <a class="nav on" href="#overview" onclick="navTo(this,'Overview')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Overview</a>
+      <a class="nav" href="#groups" onclick="navTo(this,'Channels')"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>Channels</a>
+      <a class="nav" href="#config" onclick="navTo(this,'Configuration')"><svg viewBox="0 0 24 24"><path d="M8 4h8l4 4v12H4V4h4z"/><path d="M8 12h8M8 16h5"/></svg>Configuration</a>
+      <a class="nav" href="#activity" onclick="navTo(this,'Activity')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Activity</a>
+    </nav>
+    <div class="side-foot">
+      <div class="side-label">Appearance</div>
+      <div class="swatches">
+        <button class="swatch on" data-theme-choice="paper" style="--sw:#A83F1C" title="Paper — warm light" onclick="setTheme('paper')"></button>
+        <button class="swatch" data-theme-choice="ocean" style="--sw:#12639E" title="Ocean — cool light" onclick="setTheme('ocean')"></button>
+        <button class="swatch" data-theme-choice="slate" style="--sw:#5CC6AC" title="Slate — dark neutral" onclick="setTheme('slate')"></button>
+        <button class="swatch" data-theme-choice="ember" style="--sw:#E7A24A" title="Ember — dark warm" onclick="setTheme('ember')"></button>
+      </div>
+      <div class="side-note">Private workspace<b id="who">connecting…</b></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <div class="crumb">Control Panel<i>/</i><b id="pageTitle">Overview</b></div>
+      <div class="top-right">
+        <span class="live"><i></i>auto-refresh · 2s</span>
+        <button class="btn subtle small" id="themeBtn" onclick="toggleTheme()">◐ Paper</button>
+        <button class="btn subtle small" id="authBtn" onclick="openAuth('login')">Sign in</button>
+        <button class="btn subtle small" id="logoutBtn" style="display:none" onclick="logout()">Sign out</button>
+      </div>
     </header>
 
-    <div class="banner" id="guestBanner" style="display:none">
-      <span>👋 You're in a <b>private guest workspace</b>. Nobody else can see it. Create an account to keep it across devices.</span>
-      <div class="spacer"></div><button class="small primary" onclick="openAuth('register')">Create account</button>
-    </div>
+    <div class="content">
+      <div class="banner" id="guestBanner" style="display:none">
+        <span>👋 You are in a <b>private guest workspace</b>. Nobody else can see it. Create an account to keep it across devices.</span>
+        <div class="spacer"></div>
+        <button class="btn small primary" onclick="openAuth('register')">Create account</button>
+      </div>
 
-    <div class="row" style="margin-bottom:20px">
-      <label class="check"><input type="checkbox" id="dryRun"> Dry run (poll only, send nothing)</label>
-      <button class="primary" id="btnLive" onclick="startBot()">▶ Start bot</button>
-      <button class="danger" id="btnStop" onclick="stopBot()">■ Stop</button>
-      <div class="spacer"></div>
-      <button id="btnReset" onclick="resetState()">Reset state</button>
-      <span class="muted" id="refreshNote">auto-refresh · 2s</span>
-    </div>
-
-    <div class="grid" id="stats"></div>
-
-    <div class="cols">
-      <div>
-        <section><h2>Mirroring groups</h2>
-          <table><thead><tr><th>Group</th><th>Sources</th><th>Destinations</th><th>Last ID</th></tr></thead><tbody id="groups"></tbody></table>
-        </section>
-        <section><h2>Your private configuration</h2>
-          <pre id="configPreview">(empty — add your own config)</pre>
-          <textarea id="yaml" spellcheck="false" placeholder="Paste YOUR config.yaml here. No template or sample data is provided."></textarea>
-          <div class="row" style="margin-top:10px">
-            <button class="small primary" onclick="saveConfig()">Save config</button>
-            <button class="small" onclick="validateConfig()">Validate</button>
-            <span class="msg" id="configMsg"></span>
+      <section class="hero" id="overview">
+        <div class="hero-copy">
+          <div class="eyebrow">Private workspace · isolated by account</div>
+          <h1>Your channels, mirrored.</h1>
+          <p class="sub" id="sub">Idle · your data is private</p>
+          <div class="chips">
+            <span class="chip" id="state"><i class="dot"></i>stopped</span>
+            <span class="chip ghost" id="mode">live</span>
           </div>
-          <p class="muted" style="margin:10px 0 0">Secret lines stay <b>redacted</b> unless you replace them — saving keeps your existing values. Every save/start/stop/reset requires your explicit confirmation. Restart the bot to apply config changes.</p>
-        </section>
+        </div>
+        <div class="hero-actions">
+          <label class="switch"><input type="checkbox" id="dryRun"><span>Dry run — poll only, send nothing</span></label>
+          <div class="row">
+            <button class="btn primary" id="btnLive" onclick="startBot()">Start bot</button>
+            <button class="btn" id="btnStop" onclick="stopBot()">Stop</button>
+            <button class="btn subtle" onclick="resetState()">Reset state</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="metrics" id="stats"></section>
+
+      <div class="cols">
+        <div>
+          <section class="panel" id="groups">
+            <div class="panel-head"><h2>Mirroring groups</h2><span class="panel-meta">last known positions</span></div>
+            <table><thead><tr><th>Group</th><th>Sources</th><th>Destinations</th><th>Last ID</th></tr></thead><tbody id="groupsBody"></tbody></table>
+          </section>
+          <section class="panel" id="config">
+            <div class="panel-head"><h2>Configuration</h2><span class="panel-meta">private · secrets redacted</span></div>
+            <pre id="configPreview">(empty — add your own config)</pre>
+            <textarea id="yaml" spellcheck="false" placeholder="Paste YOUR config.yaml here. No template or sample data is provided."></textarea>
+            <div class="row" style="margin-top:11px">
+              <button class="btn small primary" onclick="saveConfig()">Save config</button>
+              <button class="btn small" onclick="validateConfig()">Validate</button>
+              <span class="msg" id="configMsg"></span>
+            </div>
+            <p class="hint">Secret lines stay <b>redacted</b> unless you replace them — saving keeps your existing values. Every save, start, stop and reset needs your explicit confirmation. Restart the bot to apply config changes.</p>
+          </section>
+        </div>
+        <div>
+          <section class="panel" id="activity">
+            <div class="panel-head"><h2>Activity</h2><span class="panel-meta">newest first</span></div>
+            <div class="timeline" id="events"><div class="muted" style="font-size:12px">No events yet.</div></div>
+          </section>
+        </div>
       </div>
-      <div>
-        <section><h2>Event stream</h2><div class="events" id="events"><div class="muted">Waiting for events…</div></div></section>
-      </div>
+      <footer>Relay · local control panel · isolated per user · credentials are never rendered · respect Telegram's Terms of Service</footer>
     </div>
-    <footer>Local control panel · isolated per user · credentials are never rendered · respect Telegram's ToS</footer>
   </div>
 </div>
 
@@ -198,7 +304,7 @@ footer{text-align:center;color:var(--muted);font-size:11.5px;margin:24px 0 6px}
     <input id="username" placeholder="Username" autocomplete="username">
     <input id="password" type="password" placeholder="Password (min 8 characters)" autocomplete="current-password">
     <div class="msg" id="authMsg"></div>
-    <div class="row" style="margin-top:14px"><button class="primary" id="authSubmit" onclick="submitAuth()">Sign in</button><button class="ghost" onclick="closeAuth()">Cancel</button></div>
+    <div class="row" style="margin-top:14px"><button class="btn primary" id="authSubmit" onclick="submitAuth()">Sign in</button><button class="btn subtle" onclick="closeAuth()">Cancel</button></div>
   </div>
 </div>
 <div id="toast"></div>
@@ -209,10 +315,20 @@ const SHARED_TOKEN = QS.get('token') || '';
 const LS = { get:k=>{try{return localStorage.getItem(k)||'';}catch(e){return '';}},
              set:(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}},
              del:k=>{try{localStorage.removeItem(k);}catch(e){}} };
-const state = { guestKey: LS.get('tcd_guest'), token: LS.get('tcd_token'), theme: LS.get('tcd_theme')||'dark', me: null, authMode: 'login' };
+const THEMES = [['paper','Paper'],['ocean','Ocean'],['slate','Slate'],['ember','Ember']];
+const state = { guestKey: LS.get('tcd_guest'), token: LS.get('tcd_token'), theme: LS.get('tcd_theme')||'paper', me: null, authMode: 'login' };
+if(!THEMES.some(t=>t[0]===state.theme)) state.theme='paper';
 
-function applyTheme(){ document.body.classList.toggle('light', state.theme==='light'); document.getElementById('theme').textContent = state.theme==='light'?'☀':'☾'; }
-function toggleTheme(){ state.theme = state.theme==='light'?'dark':'light'; LS.set('tcd_theme',state.theme); applyTheme(); }
+function applyTheme(){
+  document.body.dataset.theme = state.theme;
+  document.body.classList.toggle('light', state.theme==='paper'||state.theme==='ocean');
+  const t = THEMES.find(x=>x[0]===state.theme)||THEMES[0];
+  const b=document.getElementById('themeBtn'); if(b) b.textContent='◐ '+t[1];
+  document.querySelectorAll('.swatch').forEach(el=>el.classList.toggle('on',el.dataset.themeChoice===state.theme));
+}
+function setTheme(name){ state.theme=name; LS.set('tcd_theme',name); applyTheme(); }
+function toggleTheme(){ const i=THEMES.findIndex(x=>x[0]===state.theme); setTheme(THEMES[(i+1)%THEMES.length][0]); }
+function navTo(el,title){ document.querySelectorAll('.nav').forEach(a=>a.classList.remove('on')); el.classList.add('on'); document.getElementById('pageTitle').textContent=title; }
 applyTheme();
 
 async function api(path, opts={}){
@@ -226,37 +342,39 @@ async function api(path, opts={}){
   if(!r.ok){ const e=new Error((data&&data.error)||('HTTP '+r.status)); e.status=r.status; e.data=data; throw e; }
   return data;
 }
-const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function toast(msg, kind=''){ const el=document.createElement('div'); el.className='toast '+kind; el.textContent=msg; document.getElementById('toast').appendChild(el); setTimeout(()=>{el.style.opacity=0;el.style.transform='translateX(30px)';setTimeout(()=>el.remove(),350);},3600); }
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(msg, kind=''){ const el=document.createElement('div'); el.className='toast '+kind; el.textContent=msg; document.getElementById('toast').appendChild(el); setTimeout(()=>{el.style.opacity=0;el.style.transform='translateX(24px)';setTimeout(()=>el.remove(),350);},3600); }
 function busy(btn, on, text){ if(!btn) return; btn.disabled=on; if(on){btn.dataset.old=btn.innerHTML; btn.innerHTML='<span class="spin"></span>'+text;} else if(btn.dataset.old){btn.innerHTML=btn.dataset.old;} }
 
 const LABELS=[['polls','Polls'],['mirrored','Mirrored'],['filtered','Filtered'],['edited','Edits'],['failed','Failures'],['retries','Retries']];
 const nums={};
-function animate(el,to){ const from=nums[el.id]||0; nums[el.id]=to; if(from===to){el.textContent=to;return;} const t0=performance.now();
+function animate(el,to){ if(!el) return; const from=nums[el.id]||0; nums[el.id]=to; if(from===to){el.textContent=to;return;} const t0=performance.now();
   function step(t){const p=Math.min(1,(t-t0)/420); const e=1-Math.pow(1-p,3); el.textContent=Math.round(from+(to-from)*e); if(p<1)requestAnimationFrame(step);} requestAnimationFrame(step); }
 
 async function refresh(){
   try{
     const [s,ev,cfg] = await Promise.all([api('/api/status'),api('/api/events?limit=60'),api('/api/config')]);
-    const st=document.getElementById('state'); st.textContent=s.state; st.className='pill '+(s.state==='running'?'running':s.state==='error'?'error':'');
-    st.innerHTML='<span class="dot"></span>'+esc(s.state);
-    const md=document.getElementById('mode'); md.textContent=s.mode; md.className='pill';
+    const st=document.getElementById('state'); st.className='chip '+(s.state==='running'?'running':s.state==='error'?'error':'');
+    st.innerHTML='<i class="dot"></i>'+esc(s.state);
+    const md=document.getElementById('mode'); md.textContent=s.mode; md.className='chip ghost';
     document.getElementById('sub').textContent = s.error ? s.error : (s.state==='running' ? 'Running '+s.uptime_seconds+'s · private workspace' : 'Idle · your data is private');
     const grid=document.getElementById('stats');
-    if(!grid.children.length) grid.innerHTML = LABELS.map(([k,l])=>'<div class="card"><div class="n" id="n_'+k+'">0</div><div class="l">'+l+'</div></div>').join('');
-    LABELS.forEach(([k])=>animate(document.getElementById('n_'+k),(s.stats.counters||{})[k]||0));
+    if(!grid.children.length) grid.innerHTML = LABELS.map(([k,l])=>'<div class="metric'+(k==='failed'?' is-err':'')+'" id="m_'+k+'"><div class="k">'+l+'</div><div class="n" id="n_'+k+'">0</div><div class="bar"><i id="b_'+k+'"></i></div></div>').join('');
+    const c=s.stats.counters||{};
+    const peak=Math.max(1, ...LABELS.map(([k])=>c[k]||0));
+    LABELS.forEach(([k])=>{ animate(document.getElementById('n_'+k),c[k]||0); const bar=document.getElementById('b_'+k); if(bar) bar.style.width=((c[k]||0)/peak*100)+'%'; });
     const pos={}; (s.stats.sources||[]).forEach(x=>pos[x.key]=x.last_message_id);
-    document.getElementById('groups').innerHTML=(s.groups||[]).map(g=>{
+    document.getElementById('groupsBody').innerHTML=(s.groups||[]).map(g=>{
       const last=g.sources.map(src=>{const k=Object.keys(pos).find(k=>k.endsWith('::'+src)); return k?pos[k]:'—';});
-      return '<tr><td><b>'+esc(g.name)+'</b><div class="muted">whitelist: '+(g.whitelist.length?esc(g.whitelist.join(', ')):'off')+'</div></td>'+
+      return '<tr><td><b>'+esc(g.name)+'</b><div class="muted" style="font-size:10.5px;margin-top:3px">whitelist: '+(g.whitelist.length?esc(g.whitelist.join(', ')):'off')+'</div></td>'+
         '<td>'+g.sources.map(x=>'<span class="tag">'+esc(x)+'</span>').join('')+'</td>'+
         '<td>'+g.destinations.map(x=>'<span class="tag">'+esc(x)+'</span>').join('')+'</td>'+
-        '<td class="mono">'+esc(last.join(', '))+'</td></tr>';
-    }).join('')||'<tr><td colspan="4" class="muted">No groups configured</td></tr>';
+        '<td class="mono" style="font-size:11px">'+esc(last.join(', '))+'</td></tr>';
+    }).join('')||'<tr><td colspan="4" class="muted" style="font-size:12px">No groups configured</td></tr>';
     const ta=document.getElementById('yaml'); if(!ta.dataset.dirty) ta.value=cfg.redacted||'';
-    document.getElementById('configPreview').textContent=cfg.redacted||'(no config)';
+    document.getElementById('configPreview').textContent=cfg.redacted||'(empty — add your own config)';
     document.getElementById('events').innerHTML=(ev.events||[]).slice().reverse().map(e=>
-      '<div class="ev '+esc(e.level)+'"><span class="t">'+esc((e.time||'').slice(11,19))+'</span><span class="k">'+esc(e.kind)+'</span><span>'+esc(e.message)+'</span></div>').join('')||'<div class="muted">No events yet.</div>';
+      '<div class="ev '+esc(e.level)+'"><span class="t">'+esc((e.time||'').slice(11,19))+'</span><div class="body"><span class="k">'+esc(e.kind)+'</span><span class="tx">'+esc(e.message)+'</span></div></div>').join('')||'<div class="muted" style="font-size:12px">No events yet.</div>';
   }catch(e){ document.getElementById('sub').textContent='Refresh failed: '+e.message; }
 }
 
@@ -306,8 +424,8 @@ async function init(){ try{ const me=await api('/api/me'); state.me=me.identity;
   const guest=me.identity.is_guest;
   document.getElementById('who').textContent=guest?'Guest · '+(me.identity.short||'private'):me.identity.username;
   document.getElementById('guestBanner').style.display=guest?'flex':'none';
-  document.getElementById('logoutBtn').style.display=guest?'none':'inline-block';
-  document.getElementById('authBtn').style.display=guest?'inline-block':'none';
+  document.getElementById('logoutBtn').style.display=guest?'none':'';
+  document.getElementById('authBtn').style.display=guest?'':'none';
   if(me.require_login&&guest){ document.getElementById('gate').classList.remove('hidden'); document.getElementById('app').classList.add('hidden'); return; }
   document.getElementById('gate').classList.add('hidden'); document.getElementById('app').classList.remove('hidden');
   await refresh();

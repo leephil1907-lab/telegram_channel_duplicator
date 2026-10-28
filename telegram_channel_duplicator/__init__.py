@@ -1,6 +1,6 @@
 """Telegram channel duplicator - see https://github.com/deFiss/telegram_channel_duplicator"""
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 __all__ = ["Duplicator", "Client", "ConfigController", "ConfigError"]
 

@@ -1,4 +1,26 @@
-# Architecture & change history (v0.5.0)
+# Architecture & change history (v0.6.0)
+
+## v0.6.0 — visual redesign
+
+The dark/purple gradient dashboard was replaced with a completely different
+**"Relay"** interface. Nothing about the API or the isolation model changed.
+
+- **New logo**: an inline SVG "copy" mark (two overlapping cards + an arrow),
+  drawn in the current accent colour. No image files, no fonts, no CDN.
+- **Four switchable palettes** — Paper (warm light, terracotta), Ocean (cool light, blue),
+  Slate (dark neutral, mint), Ember (dark warm, amber). Chosen from four swatches in the
+  sidebar or cycled from the top bar; saved in `localStorage`. All colour is driven by CSS
+  custom properties, so the transition is animated and `prefers-reduced-motion` is honoured.
+- **No gradients, no glass blur, no purple.** Flat surfaces, hairline borders, sharp-ish
+  8–10px radii, editorial serif headline, monospace numerals.
+- **New components**: sticky sidebar navigation (Overview / Channels / Configuration /
+  Activity), breadcrumb top bar, editorial hero with status chips and a dry-run toggle,
+  six metric cards with animated counters and proportional bars, a bordered groups table,
+  a two-pane config editor, and a vertical activity timeline with severity-coloured tags.
+- Responsive: sidebar collapses to a horizontal nav on tablets; metrics reflow 6→3→2.
+- `test_four_switchable_themes_are_wired_to_the_ui` and the extended front-end test assert
+  the themes are real CSS variables, the SVG logo is inline, no external assets are used
+  and no legacy gradient/purple colour remains.
 
 The upstream repo was a single-purpose polling script with all state in memory. The current
 build is a multi-user, restart-safe application with **no demo mode, no simulator, no sample
@@ -82,10 +104,10 @@ Optional shared secret `--token` / `TCD_TOKEN` (send `X-Token` header or `?token
 
 ```
 ./build.sh
-==> 53 passed
+==> 54 passed
 ==> BUILD OK
-   artifacts/telegram_channel_duplicator-0.5.0-py3-none-any.whl
-   artifacts/telegram_channel_duplicator-0.5.0.tar.gz
+   artifacts/telegram_channel_duplicator-0.6.0-py3-none-any.whl
+   artifacts/telegram_channel_duplicator-0.6.0.tar.gz
 ```
 
 `tests/test_multitenancy.py::test_no_demo_simulation_or_sample_artifacts` asserts the

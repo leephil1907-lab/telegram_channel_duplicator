@@ -90,9 +90,16 @@ def test_health_html_and_guest_creation(dash):
 
     code, html, _ = request(server, "/")
     assert code == 200
-    for marker in ("Control Panel", "openAuth", "toggleTheme", "cubic-bezier", "prefers-reduced-motion", "X-Guest-Key", "confirm:true"):
+    for marker in (
+        "Control Panel", "openAuth", "toggleTheme", "cubic-bezier", "prefers-reduced-motion",
+        "X-Guest-Key", "confirm:true", 'data-theme="paper"', 'class="swatches"',
+        'id="groupsBody"', 'class="timeline"', '<svg viewBox="0 0 40 40"', "brand-name",
+    ):
         assert marker in html
-    for forbidden in ("Start demo", "loadTemplate", "config.demo", "UI PREVIEW"):
+    for forbidden in (
+        "Start demo", "loadTemplate", "config.demo", "UI PREVIEW",
+        "linear-gradient", "radial-gradient", "backdrop-filter",
+    ):
         assert forbidden not in html
 
     code, me, headers = request(server, "/api/me", headers=gh("invalid"))
@@ -213,6 +220,12 @@ def test_frontend_is_self_contained_and_valid():
     assert "https://" not in css and "http://" not in css
     for marker in ("cubic-bezier", "transition:", "body.light", "prefers-reduced-motion", "focus-visible", "@keyframes"):
         assert marker in css, marker
+    for theme in ("ocean", "slate", "ember"):
+        assert "body[data-theme='%s']" % theme in css, theme
+    for legacy in ("linear-gradient", "radial-gradient", "backdrop-filter", "#7c3aed", "#8b5cf6", "#a855f7", "#6366f1"):
+        assert legacy not in css, legacy
+    assert '<svg viewBox="0 0 40 40"' in PAGE
+    assert PAGE.count('data-theme-choice=') == 4
     for marker in ("setInterval(refresh", "toggleTheme", "openAuth", "saveConfig", "X-Guest-Key", "Authorization", "confirm:true"):
         assert marker in js, marker
     assert "Start demo" not in PAGE and "btnDemo" not in PAGE and "loadTemplate" not in js
@@ -231,3 +244,20 @@ def test_frontend_is_self_contained_and_valid():
         if endpoint.startswith("/api/auth/") and endpoint.rstrip("/") == "/api/auth":
             continue
         assert endpoint.split("?")[0] in routes, endpoint
+
+
+def test_four_switchable_themes_are_wired_to_the_ui():
+    """The palette picker must actually set CSS variables, not just look pretty."""
+    import re
+    from telegram_channel_duplicator.dashboard import PAGE
+
+    js = re.search(r"<script>(.*?)</script>", PAGE, re.S).group(1)
+    css = re.search(r"<style>(.*?)</style>", PAGE, re.S).group(1)
+    for theme in ("paper", "ocean", "slate", "ember"):
+        assert "'%s'" % theme in js or '"%s"' % theme in js, theme
+        assert 'data-theme-choice="%s"' % theme in PAGE, theme
+    for theme in ("paper", "ocean", "slate", "ember"):
+        assert css.count("data-theme='%s'" % theme) >= 1 or theme == "paper"
+    assert "setTheme(" in js and "toggleTheme()" in js
+    assert "document.body.dataset.theme" in js
+    assert 'class="nav on"' in PAGE and 'class="metrics"' in PAGE

@@ -69,11 +69,11 @@ export TG_API_ID=... TG_API_HASH=... TG_PHONE=...
 Run without Compose:
 
 ```bash
-docker build -t telegram-channel-duplicator:0.5.0 .
+docker build -t telegram-channel-duplicator:0.6.0 .
 docker run -d --name tcd -p 8000:8000 \
   -v tcd-data:/app/data \
   -e TCD_REQUIRE_LOGIN=1 -e TCD_SECURE_COOKIES=0 \
-  telegram-channel-duplicator:0.5.0
+  telegram-channel-duplicator:0.6.0
 ```
 
 ## HTTPS / reverse proxy

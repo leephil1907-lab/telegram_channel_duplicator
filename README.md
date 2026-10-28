@@ -56,6 +56,13 @@ Nothing starts automatically. **Start bot**, **Stop**, **Save config** and **Res
 all require an explicit confirmation in the UI and an explicit `confirm: true` in the API.
 A **dry run** option polls without sending anything, and must be checked deliberately.
 
+## Interface
+
+The control panel uses the **Relay** design: an inline SVG logo, a sidebar, metric cards and
+a vertical activity timeline. Four palettes (**Paper**, **Ocean**, **Slate**, **Ember**) can
+be switched instantly from the sidebar swatches or the top-bar theme button — the choice is
+remembered per browser. No external fonts, images or scripts are loaded.
+
 ## Docs
 
 - [BUILD.md](BUILD.md) — build, verification and configuration details

@@ -1,4 +1,4 @@
-# Build notes — telegram_channel_duplicator (v0.5.0)
+# Build notes — telegram_channel_duplicator (v0.6.0)
 
 Imported from **https://github.com/leephil1907-lab/telegram_channel_duplicator**
 (a fork of [deFiss/telegram_channel_duplicator](https://github.com/deFiss/telegram_channel_duplicator)),
@@ -37,11 +37,11 @@ Entry points: `python main.py`, `python -m telegram_channel_duplicator`, or the 
 | 4 | `python -m build --outdir artifacts` → sdist + wheel |
 | 5 | Install the wheel into a clean temp target and verify imports, `--version` and `--check` using an **ephemeral** config fixture (not shipped) |
 
-Artifacts: `artifacts/telegram_channel_duplicator-0.5.0-py3-none-any.whl` and `.tar.gz`.
+Artifacts: `artifacts/telegram_channel_duplicator-0.6.0-py3-none-any.whl` and `.tar.gz`.
 `.venv`, `build/`, `*.egg-info`, `data/`, `state/`, `sessions/` and `logs/` are regenerable
 and git-ignored.
 
-Verified here: **Python 3.13.16, 53 offline tests passing**, wheel installed and CLI verified.
+Verified here: **Python 3.13.16, 54 offline tests passing**, wheel installed and CLI verified.
 CI also covers Python 3.9/3.11/3.13 and builds the Docker image.
 
 ## 4. Dependencies

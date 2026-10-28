@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "telegram-channel-duplicator"
-version = "0.5.0"
+version = "0.6.0"
 description = "Python/Telethon client-bot for mirroring Telegram channels, groups and private chats"
 readme = "README.md"
 requires-python = ">=3.9"
