@@ -63,6 +63,12 @@ a vertical activity timeline. Four palettes (**Paper**, **Ocean**, **Slate**, **
 be switched instantly from the sidebar swatches or the top-bar theme button — the choice is
 remembered per browser. No external fonts, images or scripts are loaded.
 
+## Render deployment
+
+A Render Blueprint is included in `render.yaml`. In Render, create a new Blueprint Instance from this repository and select that file. The service builds from the repository `Dockerfile`, uses Render's assigned `PORT`, and exposes `/api/health` for health checks. A persistent disk is mounted at `/app/data` for per-user workspaces, SQLite state, and Telegram session files; keep this disk attached to the service to preserve state across restarts. The Blueprint uses a paid Starter web service because persistent disks are not available on Render's free web services.
+
+After the first successful deploy, open the service URL and create an account from the sign-in screen. Register a strong unique password. Configure Telegram API credentials and source/destination groups inside your own workspace, validate the configuration, and test with **Dry run** before enabling live forwarding. Keep login codes, two-step verification passwords, API hashes, and session files private. Do not enable live forwarding until you have verified source permissions, destination IDs, and the intended forwarding rules.
+
 ## TeleBridge integration
 
 TeleBridge's useful features are integrated into this existing application rather than
