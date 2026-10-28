@@ -63,6 +63,25 @@ a vertical activity timeline. Four palettes (**Paper**, **Ocean**, **Slate**, **
 be switched instantly from the sidebar swatches or the top-bar theme button — the choice is
 remembered per browser. No external fonts, images or scripts are loaded.
 
+## TeleBridge integration
+
+TeleBridge's useful features are integrated into this existing application rather than
+running as a second web server. The unified dashboard keeps the existing per-user workspaces,
+authentication, configuration editor, confirmed start/stop/reset actions, SQLite activity
+history, and responsive Relay interface. Its **Recovery guide** section links directly to
+Telegram's official FAQ and support form and includes account-safety guidance; it does not
+claim to unlock accounts or bypass Telegram authentication.
+
+Message retrieval uses Telethon's paginated iterator after a source checkpoint exists, so
+messages newer than the saved position can be collected without the old fixed ten-message
+history cap. On a source's first run, the client reads only the latest message and records
+that position instead of downloading or forwarding the channel's old history. Offline tests
+cover both behaviours.
+
+The legacy standalone TeleBridge webapp dashboard is intentionally not added as a
+second server: its useful control-room and recovery concepts live in the existing dashboard,
+avoiding duplicate authentication and worker-management paths.
+
 ## Docs
 
 - [BUILD.md](BUILD.md) — build, verification and configuration details
