@@ -97,8 +97,8 @@ def _read(path: str) -> str:
             return f.read()
     except FileNotFoundError as exc:
         raise ConfigError(
-            f"'{path}' not found. Copy config.yaml.example to config.yaml "
-            "and fill in your Telegram API credentials."
+            f"'{path}' not found. Create your own config.yaml "
+            "and fill in your Telegram API credentials and channel groups."
         ) from exc
     except OSError as exc:
         raise ConfigError(f"Cannot read '{path}': {exc}") from exc

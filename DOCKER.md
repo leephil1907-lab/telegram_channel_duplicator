@@ -10,7 +10,8 @@ browser) gets its own directory under `/app/data/workspaces/`:
     ├── w_<id>/               # one registered user
     │   ├── config.yaml       # EMPTY until the owner fills it in (mode 600)
     │   ├── state.db          # private SQLite counters/events/positions
-    │   └── sessions/         # private Telethon login session
+    │   ├── recovery/         # private recovery API credentials (unencrypted at rest)
+    │   └── sessions/         # private, separate mirroring and recovery sessions
     └── g_<id>/               # one anonymous browser
         └── ...
 ```
@@ -30,6 +31,18 @@ Open **http://localhost:8000**. Create an account, paste your own `config.yaml` 
 private editor, click **Save config** (you'll be asked to confirm), then **Start bot**
 (another confirmation). No sample config or `.env` file is provided by the project — supply
 credentials yourself.
+
+## Telegram login on a hosted instance
+
+On a trusted HTTPS deployment, provide your own Telegram phone number and API credentials
+in the mirroring configuration or recovery sign-in form. The server requests a real
+Telegram code, shows the returned delivery type when available and asks for a Telegram
+two-step password only if required. Telegram chooses delivery and can impose restrictions;
+SMS and account recovery are not guaranteed. Recovery supports a cooldown-limited resend.
+Saved authorized sessions can reconnect without a code. The mirroring worker is not shown
+as running until it has authenticated and resolved its chat titles. See the README for
+unsupported verification steps and security warnings. Never enter credentials into a
+preview server or other server that you do not control and trust.
 
 ## Config schema
 
@@ -61,7 +74,7 @@ export TG_API_ID=... TG_API_HASH=... TG_PHONE=...
 | `PORT` | `8000` | Host port mapped to container port 8000 |
 | `TCD_REQUIRE_LOGIN` | `1` | Guests must sign in before using the dashboard |
 | `TCD_ALLOW_REGISTRATION` | `1` | Set `0` to close sign-ups (create accounts first!) |
-| `TCD_SECURE_COOKIES` | `0` | Set `1` behind HTTPS → `Secure; SameSite=None` cookies |
+| `TCD_SECURE_COOKIES` | `0` | Set `1` behind HTTPS → `Secure; SameSite=Lax` cookies |
 | `TCD_TOKEN` | *(empty)* | Extra shared secret; open `/?token=...` |
 | `TG_PHONE`, `TG_API_ID`, `TG_API_HASH` | *(empty)* | Optional server-wide credentials for `${VAR}` placeholders |
 | `TCD_DATA_DIR` | `/app/data` | Root of all per-user data (inside the container) |
@@ -69,16 +82,18 @@ export TG_API_ID=... TG_API_HASH=... TG_PHONE=...
 Run without Compose:
 
 ```bash
-docker build -t telegram-channel-duplicator:0.6.0 .
+docker build -t telegram-channel-duplicator:0.8.1 .
 docker run -d --name tcd -p 8000:8000 \
   -v tcd-data:/app/data \
   -e TCD_REQUIRE_LOGIN=1 -e TCD_SECURE_COOKIES=0 \
-  telegram-channel-duplicator:0.6.0
+  telegram-channel-duplicator:0.8.1
 ```
 
 ## HTTPS / reverse proxy
 
-Cookies work best over HTTPS. Put the container behind nginx/Caddy/Traefik and set
+The recovery UI requires HTTPS except on a local loopback address. The HTTP server does not
+terminate TLS itself, so API clients must also use a trusted TLS reverse proxy. Put the
+container behind nginx/Caddy/Traefik, restrict access, configure proxy-level rate limits, and set
 `TCD_SECURE_COOKIES=1`:
 
 ```nginx
@@ -100,14 +115,17 @@ docker run --rm -v tcd-data:/data -v "$PWD":/backup alpine \
   tar czf /backup/tcd-backup.tgz -C /data .
 ```
 
-The named volume survives `docker compose down` (but not `down -v`). Config files and
-Telegram sessions are never committed and never shared.
+The named volume survives `docker compose down` (but not `down -v`). Its configuration,
+recovery credentials and Telegram sessions are sensitive and unencrypted at rest. Encrypt
+and restrict disk backups; a server administrator can access the active session. Downloaded
+Relay recovery backups are separately encrypted with the user's backup password.
 
 ## Scaling note
 
-This single-container design handles many concurrent users via threads. For horizontal
-scaling behind a load balancer, all replicas must share the same `/app/data` volume and
-you should move session tokens to a shared store; otherwise use sticky sessions.
+Run **one server process/instance per data directory**. Recovery workers, one-use challenges
+and rate limits are held in process memory, and Telethon SQLite sessions must not be opened
+concurrently by multiple workers. Sharing the volume or adding sticky sessions alone does
+not make horizontal scaling safe.
 
 ## Verification
 

@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101c32">
+<title>Overview · Relay</title>
+<style>
+/* Relay's interface is deliberately self-contained: no CDN, fonts or images. */
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-synthesis:none}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body[data-theme='paper']{--bg:#f5f7fb;--surface:#fff;--surface-2:#f7f9fc;--ink:#17233a;--muted:#718097;--line:#e5eaf2;--primary:#426be8;--on-primary:#fff;--primary-dark:#3158cb;--primary-soft:#edf2ff;--success:#20896e;--success-bg:#eaf7f1;--warning:#a76d18;--warning-bg:#fff6e5;--danger:#d65b61;--danger-bg:#fff0f0;--shadow:0 2px 12px rgba(32,53,91,.035);color-scheme:light}
+body[data-theme='ocean']{--bg:#edf5f8;--surface:#fff;--surface-2:#f4fafb;--ink:#183044;--muted:#6a8392;--line:#dae9ed;--primary:#1383a8;--on-primary:#fff;--primary-dark:#096c8e;--primary-soft:#e8f6fa;--success:#20896e;--success-bg:#eaf7f1;--warning:#a76d18;--warning-bg:#fff6e5;--danger:#cc5960;--danger-bg:#fff0f0;--shadow:0 2px 12px rgba(23,77,95,.04);color-scheme:light}
+body[data-theme='slate']{--bg:#111a2b;--surface:#1a263a;--surface-2:#202e43;--ink:#edf2fa;--muted:#a4b2c6;--line:#2d3d55;--primary:#8aa8ff;--on-primary:#121a29;--primary-dark:#acc0ff;--primary-soft:#26395a;--success:#75d4b1;--success-bg:#213e3c;--warning:#ecc181;--warning-bg:#483929;--danger:#f48b90;--danger-bg:#4a2d36;--shadow:0 2px 12px rgba(0,0,0,.12);color-scheme:dark}
+body[data-theme='ember']{--bg:#1b191c;--surface:#29252a;--surface-2:#322d31;--ink:#f6eee9;--muted:#b8a9a6;--line:#453b3c;--primary:#e8ac79;--on-primary:#241b17;--primary-dark:#f3c499;--primary-soft:#49392f;--success:#9dd2a9;--success-bg:#304338;--warning:#eec27f;--warning-bg:#493b2c;--danger:#f08f8b;--danger-bg:#4d3034;--shadow:0 2px 12px rgba(0,0,0,.14);color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;transition:background-color .25s,color .25s}
+button,input,textarea,select{font:inherit} button{cursor:pointer} a{color:inherit;text-decoration:none}
+button,a,input,textarea,select{transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease,transform .18s ease}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--primary);outline-offset:3px}
+button:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+svg{display:block}.icon{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}.icon.sm{width:16px;height:16px}.icon.lg{width:23px;height:23px}
+.muted{color:var(--muted)}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.strong{font-weight:700}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.boot{min-height:100vh;display:grid;place-items:center;color:var(--muted);font-size:13px}.boot-inner{display:flex;align-items:center;gap:12px}
+.spinner{width:17px;height:17px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Shared workspace shell */
+.shell{min-height:100vh;display:grid;grid-template-columns:242px minmax(0,1fr)}
+.sidebar{position:sticky;top:0;height:100vh;background:#111e34;color:#a7b4c8;display:flex;flex-direction:column;padding:25px 16px 18px;z-index:50;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:11px;padding:0 9px;color:#fff}.brand-mark{width:39px;height:39px;display:grid;place-items:center;border-radius:12px;background:#4771ed;box-shadow:0 5px 15px rgba(58,95,216,.24)}
+.brand-mark svg{width:25px;height:25px}.brand-name{font-weight:750;font-size:20px;line-height:1.05;letter-spacing:-.04em}.brand-sub{font-size:9px;font-weight:650;letter-spacing:.15em;text-transform:uppercase;color:#8798b2;margin-top:5px;white-space:nowrap}
+.workspace-label{font-size:10px;text-transform:uppercase;letter-spacing:.13em;font-weight:750;color:#6c7f9c;margin:37px 12px 11px}.workspace-label.help-label{margin-top:26px}
+.nav-list{display:grid;gap:4px}.nav-link{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid transparent;border-radius:8px;font-size:13px;font-weight:550;color:#aab8cc;position:relative}
+.nav-link:hover{background:#1c2b45;color:#fff}.nav-link.active{color:#fff;background:#273957;border-color:#314766}.nav-link.active::before{content:"";position:absolute;left:-17px;width:3px;height:21px;border-radius:0 3px 3px 0;background:#7796ff}.nav-link .icon{width:18px;height:18px}.nav-link.active .icon{color:#94abff}
+.sidebar-spacer{flex:1;min-height:26px}.side-card{padding:14px 12px;background:#1b2a43;border:1px solid #2b3b55;border-radius:10px}.side-card-top{display:flex;gap:9px;align-items:center;color:#e6edf8;font-size:12px;font-weight:700}.side-card-top .icon{color:#7fa0ff}.side-card p{font-size:11px;line-height:1.55;margin:8px 0 0;color:#8fa1ba}.side-account{display:flex;align-items:center;gap:10px;margin-top:19px;padding:13px 3px 0;border-top:1px solid #28364b}
+.avatar{width:33px;height:33px;background:#344766;color:#dce7fb;display:grid;place-items:center;border-radius:50%;font-size:12px;font-weight:750;flex:none;text-transform:uppercase}.account-copy{min-width:0;flex:1}.account-name{font-size:12px;font-weight:700;color:#edf2fa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.account-role{font-size:10px;color:#8192ab;margin-top:2px}.side-account a{color:#a6b6cc;padding:5px}.side-account a:hover{color:white}
+.main{min-width:0}.topbar{height:69px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 38px;gap:18px;position:sticky;top:0;z-index:25}.crumbs{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);min-width:0}.crumbs b{font-weight:700;color:var(--ink)}.crumbs .icon{width:13px;height:13px;opacity:.5}.top-actions{display:flex;align-items:center;gap:9px}.connection{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap;margin-right:7px}.connection i{width:7px;height:7px;border-radius:50%;background:#b6bfcc}.connection.online i{background:#35aa80;box-shadow:0 0 0 3px rgba(53,170,128,.11)}.connection.offline i{background:var(--danger)}
+.icon-button{display:inline-grid;place-items:center;width:35px;height:35px;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:8px}.icon-button:hover{color:var(--primary);border-color:var(--primary)}.mobile-menu{display:none}.mobile-backdrop{display:none}
+.content{max-width:1510px;margin:0 auto;padding:36px 40px 52px}.page{animation:page-in .25s cubic-bezier(.2,.7,.25,1) both}@keyframes page-in{from{opacity:.55;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.page-heading{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:25px}.eyebrow{font-size:10px;line-height:1;text-transform:uppercase;font-weight:750;letter-spacing:.16em;color:var(--primary);margin-bottom:11px}.page-heading h1{font-size:28px;letter-spacing:-.045em;line-height:1.15;margin:0;font-weight:750}.page-heading p{margin:8px 0 0;color:var(--muted);font-size:13px}.heading-actions{display:flex;gap:9px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:9px 13px;font-size:12px;line-height:1.4;font-weight:700;white-space:nowrap;min-height:37px}.btn:hover:not(:disabled){border-color:var(--primary);color:var(--primary);transform:translateY(-1px)}.btn.primary{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}.btn.primary:hover:not(:disabled){background:var(--primary-dark);border-color:var(--primary-dark);color:var(--on-primary)}.btn.subtle{background:transparent}.btn.danger{color:var(--danger)}.btn.danger:hover:not(:disabled){border-color:var(--danger);color:var(--danger)}.btn.sm{min-height:32px;padding:7px 10px;font-size:11px}.btn.full{width:100%}.text-link{color:var(--primary);font-size:12px;font-weight:700;display:inline-flex;gap:5px;align-items:center}.text-link:hover{text-decoration:underline}.text-link .icon{width:14px;height:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 22px 0}.card-head h2{font-size:14px;line-height:1.3;letter-spacing:-.015em;margin:0;font-weight:750}.card-head p{font-size:11.5px;color:var(--muted);margin:5px 0 0}.card-body{padding:19px 22px 21px}.divider{border:0;border-top:1px solid var(--line);margin:17px 0}
+.notice{display:flex;align-items:center;gap:14px;background:var(--primary-soft);border:1px solid color-mix(in srgb,var(--primary) 16%,var(--line));border-radius:10px;padding:14px 16px;margin-bottom:20px}.notice-icon{display:grid;place-items:center;width:37px;height:37px;border-radius:9px;background:var(--surface);color:var(--primary);flex:none}.notice-copy{flex:1;min-width:0}.notice strong{display:block;font-size:12px}.notice p{font-size:11.5px;color:var(--muted);margin:3px 0 0}.notice.warning{background:var(--warning-bg);border-color:color-mix(in srgb,var(--warning) 20%,var(--line))}.notice.warning .notice-icon{color:var(--warning)}
+.guest-banner{margin-bottom:20px}.guest-banner strong{display:inline}.guest-banner p{margin:0}.guest-banner .btn{flex:none}
+.stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin-bottom:18px}.stat-card{padding:18px 19px 16px;min-width:0}.stat-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.stat-label{font-size:11.5px;color:var(--muted);font-weight:650}.stat-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;color:#5378e6;background:#eff3ff}.stat-icon.green{background:#eaf8f1;color:#399776}.stat-icon.amber{background:#fff6e6;color:#d19a42}.stat-icon.red{background:#fff0ef;color:#cf7173}.stat-value{font-size:27px;line-height:1.1;font-weight:750;letter-spacing:-.045em;margin-top:10px}.stat-caption{font-size:10.5px;color:var(--muted);margin-top:6px}
+.overview-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(290px,1fr);gap:18px;align-items:start}.stack{display:grid;gap:18px}.activity-list{min-height:170px}.empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:33px 18px;color:var(--muted)}.empty-icon{width:43px;height:43px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface-2);color:#91a0b8;border-radius:12px;margin-bottom:12px}.empty strong{color:var(--ink);font-size:12px}.empty p{font-size:11.5px;max-width:320px;line-height:1.6;margin:5px 0 0}.empty .btn{margin-top:13px}
+.event-row{display:grid;grid-template-columns:35px minmax(0,1fr) auto;align-items:start;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}.event-row:last-child{border-bottom:0}.event-icon{width:33px;height:33px;border-radius:9px;display:grid;place-items:center;background:var(--primary-soft);color:var(--primary)}.event-icon.error{background:var(--danger-bg);color:var(--danger)}.event-icon.warning{background:var(--warning-bg);color:var(--warning)}.event-icon.success{background:var(--success-bg);color:var(--success)}.event-title{font-size:11.5px;font-weight:700;color:var(--ink);text-transform:capitalize}.event-message{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:3px;word-break:break-word}.event-time{color:var(--muted);font-size:10.5px;white-space:nowrap;margin-top:2px}
+.status-panel{display:flex;align-items:center;gap:11px;padding:14px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2)}.status-icon{width:37px;height:37px;border-radius:10px;display:grid;place-items:center;background:var(--surface);color:var(--muted)}.status-panel.running .status-icon{color:var(--success)}.status-panel.error .status-icon{color:var(--danger)}.status-copy{flex:1;min-width:0}.status-copy strong{font-size:12px;display:block}.status-copy span{font-size:11px;color:var(--muted);display:block;margin-top:3px;overflow-wrap:anywhere}.pill{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:30px;background:var(--surface);border:1px solid var(--line);color:var(--muted);font-size:10px;font-weight:700;white-space:nowrap}.pill i{width:6px;height:6px;border-radius:50%;background:currentColor}.pill.running{color:var(--success);background:var(--success-bg);border-color:transparent}.pill.error{color:var(--danger);background:var(--danger-bg);border-color:transparent}
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 0}.switch-copy strong{font-size:12px;display:block}.switch-copy span{font-size:11px;color:var(--muted);display:block;margin-top:3px}.switch{position:relative;display:block;width:36px;height:21px;flex:none}.switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;z-index:2;cursor:pointer}.switch span{display:block;background:#c9d1dd;border-radius:99px;width:36px;height:21px;transition:background .2s}.switch span:after{content:"";position:absolute;width:15px;height:15px;left:3px;top:3px;background:white;border-radius:50%;transition:transform .2s}.switch input:checked+span{background:var(--primary)}.switch input:checked+span:after{transform:translateX(15px)}.switch input:focus-visible+span{outline:3px solid var(--primary);outline-offset:3px}
+.control-actions{display:grid;grid-template-columns:1fr auto;gap:8px}.control-hint{font-size:10.5px;line-height:1.6;color:var(--muted);margin:12px 0 0}.small-summary{display:flex;gap:12px;align-items:center;padding:2px 0}.small-summary .notice-icon{background:var(--primary-soft)}.small-summary strong{font-size:12px}.small-summary p{font-size:11px;margin:3px 0 0;color:var(--muted)}
+
+/* Secondary pages */
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.search{position:relative;flex:1;max-width:360px}.search .icon{position:absolute;left:12px;top:11px;color:var(--muted)}.input,.search input,.select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:10px 12px;font-size:12px}.search input{padding-left:37px;height:39px}.input::placeholder,.search input::placeholder,textarea::placeholder{color:#9aa6b5}.select{width:auto;min-width:150px;height:39px}.toolbar-count{font-size:11px;color:var(--muted);white-space:nowrap}
+.group-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.group-card{padding:19px}.group-top{display:flex;justify-content:space-between;align-items:start;gap:12px}.group-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:var(--primary-soft);color:var(--primary);flex:none}.group-heading{display:flex;align-items:center;gap:11px;min-width:0}.group-heading h3{font-size:13px;line-height:1.3;margin:0;word-break:break-word}.group-heading p{font-size:10.5px;color:var(--muted);margin:4px 0 0}.group-path{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px;margin-top:19px}.path-box{min-width:0;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 11px;min-height:68px}.path-label{font-size:9px;font-weight:750;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.path-value{font-size:11.5px;font-weight:650;margin-top:6px;word-break:break-word}.path-arrow{color:#a0abc0}.group-foot{border-top:1px solid var(--line);margin-top:16px;padding-top:12px;color:var(--muted);font-size:10.5px}.page-empty{padding:42px 20px}
+.config-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(270px,.75fr);gap:18px;align-items:start}.editor{width:100%;min-height:340px;resize:vertical;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;color:var(--ink);font:12px/1.75 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:15px;tab-size:2}.editor:focus{border-color:var(--primary)}.editor-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px;font-size:11px;color:var(--muted)}.editor-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}.message{font-size:11.5px;line-height:1.5}.message.ok{color:var(--success)}.message.error{color:var(--danger)}.message.warn{color:var(--warning)}.field-list{list-style:none;padding:0;margin:0}.field-list li{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--line)}.field-list li:last-child{border-bottom:0}.field-num{height:23px;width:23px;border-radius:7px;background:var(--primary-soft);color:var(--primary);font-size:10px;font-weight:800;display:grid;place-items:center;flex:none}.field-list strong{font-size:11.5px}.field-list p{font-size:11px;color:var(--muted);line-height:1.6;margin:3px 0 0}.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;background:var(--surface-2);padding:2px 5px;border-radius:4px}
+.activity-tools{padding:18px 22px 0}.activity-full{padding:0 22px 18px;min-height:280px}.activity-full .empty{padding:65px 18px}.help-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}.help-card{padding:20px}.help-card h3{font-size:13px;margin:14px 0 7px}.help-card p{font-size:11.5px;color:var(--muted);line-height:1.7;margin:0}.help-step{width:32px;height:32px;display:grid;place-items:center;background:var(--primary-soft);color:var(--primary);font-weight:750;border-radius:9px}.guide-callout{padding:21px 22px;margin-bottom:17px}.guide-callout h2{font-size:14px;margin:0 0 8px}.guide-callout p{font-size:12px;color:var(--muted);line-height:1.75;margin:0;max-width:860px}.guide-links{display:flex;gap:9px;flex-wrap:wrap;margin-top:17px}.security-note{display:flex;gap:12px;padding:17px 19px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);margin-top:17px}.security-note .icon{color:var(--primary)}.security-note p{font-size:11.5px;color:var(--muted);line-height:1.7;margin:0}.security-note strong{color:var(--ink)}
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}.settings-row{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:12px 0;border-bottom:1px solid var(--line)}.settings-row:last-child{border-bottom:0}.settings-row strong{font-size:12px}.settings-row p{font-size:11px;color:var(--muted);margin:3px 0 0}.theme-options{display:flex;gap:10px;flex-wrap:wrap;margin-top:3px}.theme-choice{display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--muted);font-size:11px}.theme-choice i{width:13px;height:13px;border-radius:50%;background:var(--sw)}.theme-choice.active{border-color:var(--primary);color:var(--ink)}.danger-box{border-color:color-mix(in srgb,var(--danger) 28%,var(--line))}
+.footer{display:flex;justify-content:space-between;gap:12px;padding-top:21px;margin-top:20px;border-top:1px solid var(--line);font-size:10.5px;color:var(--muted)}
+
+/* Authentication and dialogs */
+.auth-screen{min-height:100vh;display:grid;place-items:center;background:var(--bg);padding:24px}.auth-main{display:flex;justify-content:center;align-items:center;width:100%}.auth-box{width:100%;max-width:450px;padding:36px;background:var(--surface);border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow)}.auth-brand{padding:0;margin-bottom:32px;color:var(--ink)}.auth-brand .brand-name{color:var(--ink)}.auth-brand .brand-sub{color:var(--muted)}
+.auth-box h2{font-size:26px;letter-spacing:-.04em;margin:0 0 7px}.auth-box>p{color:var(--muted);font-size:12.5px;margin:0 0 25px;line-height:1.6}.auth-tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:3px;margin-bottom:22px}.auth-tabs button{border:0;border-radius:6px;background:transparent;color:var(--muted);padding:9px;font-size:11.5px;font-weight:700}.auth-tabs button.active{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}.form-label{font-size:11.5px;font-weight:700;display:block;margin:0 0 7px}.field{margin-bottom:16px}.field .input{height:43px}.field-hint{font-size:10.5px;color:var(--muted);margin:6px 0 0}.auth-error{min-height:18px;margin-bottom:10px}.auth-note{display:flex;gap:8px;font-size:10.5px;color:var(--muted);line-height:1.6;margin-top:18px}.auth-note .icon{width:15px;height:15px;color:var(--success)}.auth-back{margin-top:18px}
+dialog{max-width:calc(100vw - 32px);border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:0;box-shadow:0 24px 70px rgba(8,17,34,.24)}dialog::backdrop{background:rgba(12,22,39,.55)}.dialog-inner{width:420px;max-width:100%;padding:24px}.dialog-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:var(--primary-soft);color:var(--primary);margin-bottom:14px}.dialog-inner h2{font-size:17px;letter-spacing:-.025em;margin:0 0 7px}.dialog-inner p{font-size:12px;line-height:1.7;color:var(--muted);margin:0 0 18px}.dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:19px}.dialog-inner .input{height:42px}.dialog-alert{font-size:11px;color:var(--danger);min-height:15px;margin-top:6px}.toast-stack{position:fixed;bottom:22px;right:22px;z-index:100;display:grid;gap:8px;max-width:min(370px,calc(100vw - 44px))}.toast{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--primary);box-shadow:0 10px 30px rgba(15,30,55,.12);padding:11px 14px;border-radius:8px;color:var(--ink);font-size:12px;animation:page-in .2s ease both}.toast.error{border-left-color:var(--danger)}.toast.ok{border-left-color:var(--success)}
+@media(max-width:1100px){.content{padding:30px 28px 44px}.topbar{padding:0 28px}.stats-grid{gap:10px}.stat-card{padding:16px}.overview-grid{grid-template-columns:minmax(0,1.2fr) minmax(270px,.9fr)}}
+@media(max-width:850px){.shell{display:block}.sidebar{position:fixed;left:0;top:0;bottom:0;width:242px;transform:translateX(-100%);transition:transform .25s cubic-bezier(.2,.7,.25,1)}body.menu-open .sidebar{transform:translateX(0)}.mobile-backdrop{position:fixed;inset:0;background:rgba(9,18,33,.48);z-index:40}body.menu-open .mobile-backdrop{display:block}.mobile-menu{display:inline-grid}.topbar{height:62px} .auth-box{padding:32px}}
+@media(max-width:680px){.content{padding:26px 18px 38px}.topbar{padding:0 18px}.connection{font-size:0;margin:0}.connection i{width:8px;height:8px}.crumbs{gap:6px}.page-heading{align-items:start;flex-direction:column;gap:16px}.page-heading h1{font-size:25px}.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.overview-grid,.config-layout,.settings-grid,.help-grid,.group-grid{grid-template-columns:1fr}.notice{align-items:flex-start;flex-wrap:wrap}.notice-copy{flex:1 1 calc(100% - 51px)}.notice .btn{margin-left:51px}.toolbar{flex-wrap:wrap}.search{max-width:none;min-width:180px}.group-path{gap:6px}.card-head{padding:18px 17px 0}.card-body{padding:17px}.activity-tools{padding:16px 17px 0}.activity-full{padding:0 17px 16px}.footer{flex-direction:column}.auth-screen{padding:16px}.auth-box{padding:25px}}
+@media(max-width:480px){.crumbs>span:first-of-type,.crumbs>.icon{display:none}#topAuth{display:none!important}}
+@media(max-width:390px){.top-actions{gap:5px}.stat-label{font-size:10.5px}.stat-value{font-size:24px}.event-row{grid-template-columns:31px minmax(0,1fr)}.event-time{grid-column:2}.group-path{grid-template-columns:1fr}.path-arrow{transform:rotate(90deg);margin:auto}}
+/* Recovery center */
+.recovery-hero{position:relative;overflow:hidden;display:flex;justify-content:space-between;gap:24px;min-height:198px;background:#1b3656;border:1px solid #284465;border-radius:14px;color:#fff;margin-bottom:19px;padding:27px 30px}.rec-hero-copy{position:relative;z-index:1;max-width:690px}.rec-overline{display:flex;align-items:center;gap:8px;color:#aec7ff;font-size:9px;letter-spacing:.16em;font-weight:800}.rec-overline span{width:7px;height:7px;border-radius:50%;background:#8aabff;box-shadow:0 0 0 4px rgba(138,171,255,.12)}.recovery-hero h2{font-size:23px;letter-spacing:-.035em;margin:15px 0 7px;line-height:1.2}.recovery-hero p{font-size:12px;line-height:1.7;color:#becde1;margin:0;max-width:590px}.rec-hero-tags{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}.rec-hero-tags span{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(219,232,255,.17);background:rgba(255,255,255,.06);border-radius:30px;padding:5px 9px;font-size:10px;font-weight:700;color:#d9e6f7}.rec-hero-tags .icon{color:#acc5ff}.rec-hero-art{width:200px;flex:none;align-self:center}.rec-hero-art svg{width:100%}.rec-guest{display:flex;gap:16px;align-items:flex-start;padding:24px}.rec-guest h2{font-size:15px;margin:1px 0 6px}.rec-guest p{font-size:12px;color:var(--muted);line-height:1.7;max-width:590px;margin:0 0 15px}.rec-layout{display:grid;grid-template-columns:minmax(0,1fr) 265px;gap:18px;align-items:start}.rec-main,.rec-aside{min-width:0}.rec-main{display:grid;gap:18px}.rec-aside{display:grid;gap:14px}.rec-session{padding:22px}.rec-card-heading{display:flex;align-items:flex-start;gap:12px}.rec-heading-icon,.rec-feature-icon{display:grid;place-items:center;width:39px;height:39px;border-radius:10px;background:var(--primary-soft);color:var(--primary);flex:none}.rec-card-heading>div:nth-child(2){flex:1;min-width:0}.rec-kicker{font-size:9px;letter-spacing:.14em;font-weight:800;color:var(--muted)}.rec-card-heading h2,.rec-section-heading h2,.rec-revoke h2{font-size:15px;letter-spacing:-.02em;margin:3px 0 4px}.rec-card-heading p,.rec-section-heading p,.rec-revoke p{font-size:11.5px;color:var(--muted);line-height:1.6;margin:0}.rec-session-bottom{display:flex;align-items:center;justify-content:space-between;gap:14px;border-top:1px solid var(--line);margin-top:20px;padding-top:17px}.rec-account{display:flex;align-items:center;gap:10px;min-width:0}.rec-account-avatar{display:grid;place-items:center;width:37px;height:37px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line);color:var(--muted);flex:none}.rec-account-avatar .icon{width:17px}.rec-account strong{display:block;font-size:12px;overflow-wrap:anywhere}.rec-account p{font-size:11px;color:var(--muted);margin:3px 0 0;overflow-wrap:anywhere}.rec-session-actions,.rec-tool-actions{display:flex;gap:7px;flex-wrap:wrap}.rec-inline-error{font-size:11px;color:var(--danger);background:var(--danger-bg);border-radius:8px;margin-top:14px;padding:10px 12px;overflow-wrap:anywhere}.rec-section-heading{padding:3px 1px 0}.rec-tool-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.rec-tool{padding:19px;min-width:0;display:flex;flex-direction:column;align-items:flex-start}.rec-tool h3{font-size:13px;margin:15px 0 6px;letter-spacing:-.015em}.rec-tool>p{font-size:11.5px;line-height:1.65;color:var(--muted);margin:0 0 16px;flex:1}.rec-tool-actions{width:100%}.rec-feature-icon.violet{background:#f0efff;color:#7b68bc}.rec-feature-icon.amber{background:var(--warning-bg);color:var(--warning)}.rec-feature-icon.green{background:var(--success-bg);color:var(--success)}.rec-revoke{padding:19px 21px;display:flex;align-items:center;justify-content:space-between;gap:18px;border-color:color-mix(in srgb,var(--danger) 22%,var(--line))}.rec-revoke .rec-kicker{color:var(--danger)}.rec-revoke p{max-width:600px}.rec-side-card,.rec-format{padding:20px}.rec-side-card h2{font-size:14px;letter-spacing:-.015em;margin:6px 0 14px}.rec-checklist{list-style:none;padding:0;margin:0}.rec-checklist li{display:flex;gap:10px;padding:12px 0;border-top:1px solid var(--line)}.rec-checklist li>span{display:grid;place-items:center;width:24px;height:24px;border-radius:7px;flex:none;background:var(--primary-soft);color:var(--primary);font-size:9px;font-weight:800}.rec-checklist strong,.rec-format strong{font-size:11.5px}.rec-checklist p,.rec-format p{font-size:11px;color:var(--muted);line-height:1.65;margin:4px 0 0}.rec-checklist a{color:var(--primary);font-weight:700}.rec-warning{display:flex;gap:10px;padding:16px;background:var(--warning-bg);border:1px solid color-mix(in srgb,var(--warning) 22%,var(--line));border-radius:11px}.rec-warning>.icon{color:var(--warning);width:17px}.rec-warning strong{font-size:11.5px}.rec-warning p{font-size:11px;color:var(--muted);line-height:1.65;margin:5px 0 0}.rec-format strong{display:block;margin-top:8px}.rec-qr,.rec-messages{width:100%;margin-top:16px;padding:12px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2)}.rec-qr{display:flex;align-items:center;gap:12px}.rec-qr img{width:110px;height:110px;object-fit:contain;background:#fff;border:4px solid #fff;flex:none}.rec-qr strong,.rec-messages strong{font-size:11px}.rec-qr p,.rec-messages p{font-size:10.5px;color:var(--muted);line-height:1.5;margin:4px 0 7px}.rec-text-button{border:0;padding:0;background:transparent;cursor:pointer}.rec-qr .rec-text-button{display:block;margin-top:7px}.rec-messages-head{display:flex;justify-content:space-between;gap:8px}.rec-message{border-top:1px solid var(--line);margin-top:10px;padding-top:10px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;line-height:1.6}.rec-message time{display:block;color:var(--muted);font-size:10px;margin-bottom:5px}.rec-pending{margin:11px 0 0!important;color:var(--warning)!important;flex:none!important}.rec-dialog{width:480px}.rec-dialog .field{margin-bottom:13px}.rec-dialog .field-hint{line-height:1.5}.rec-dialog input[type=file]{padding:8px;height:auto;min-height:42px}.rec-dialog .danger-hint{padding:10px 12px;border-radius:8px;background:var(--warning-bg);color:var(--warning);font-size:11px;line-height:1.6;margin:0 0 15px}.rec-dialog .select{width:100%;height:42px}.rec-dialog .dialog-alert{overflow-wrap:anywhere}.rec-insecure{margin-bottom:18px}
+@media(max-width:1100px){.rec-layout{grid-template-columns:minmax(0,1fr) 230px}.rec-session-actions .btn{font-size:11px}.rec-hero-art{width:160px}}
+@media(max-width:850px){.rec-layout{grid-template-columns:minmax(0,1fr) 240px}}
+@media(max-width:680px){.recovery-hero{padding:23px 20px;min-height:0}.rec-hero-art{width:100px;opacity:.65;position:absolute;right:-10px;top:5px}.rec-hero-copy{max-width:100%}.recovery-hero h2{font-size:20px;max-width:80%}.recovery-hero p{max-width:100%}.rec-layout{grid-template-columns:1fr}.rec-aside{grid-template-columns:1fr}.rec-session{padding:18px}.rec-revoke{align-items:flex-start;flex-direction:column}.rec-tool-grid{grid-template-columns:1fr}.rec-card-heading{display:grid;grid-template-columns:39px minmax(0,1fr);gap:10px 12px}.rec-card-heading .pill{grid-column:2;margin-left:0;justify-self:start}.rec-session-bottom{align-items:flex-start;flex-direction:column}.rec-qr img{width:90px;height:90px}}
+
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body data-theme="paper" class="light">
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-channels" viewBox="0 0 24 24"><rect x="3" y="5" width="13" height="12" rx="2"/><path d="M7 9h5M7 12h3M18 8h1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-1"/></symbol>
+  <symbol id="i-config" viewBox="0 0 24 24"><path d="M6 3.5h8l4 4v13H6z"/><path d="M14 3.5v4h4M9 12h6M9 15.5h6"/></symbol>
+  <symbol id="i-activity" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3 2"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4.8 6v5.1c0 4.5 2.8 7.7 7.2 9.9 4.4-2.2 7.2-5.4 7.2-9.9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/><circle cx="12" cy="12" r="4"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M14 7l5 5-5 5"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.5 9A7 7 0 0 1 18 7l2 5M4 12l2 5a7 7 0 0 0 12.5-2"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="m3 11 17-7-6 17-3-7-8-3zM11 14l9-10"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2.8 19h18.4L12 3zM12 9v4M12 16.5h.01"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M4 5h16l1 10v4H3v-4L4 5zM3 15h6l1.5 2h3L15 15h6"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5.5" y="10" width="13" height="10" rx="2"/><path d="M8.5 10V7a3.5 3.5 0 0 1 7 0v3M12 14v2"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M13 5h6v6M19 5l-9 9"/><path d="M17 13v5H6V7h5"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H5v16h5M14 8l4 4-4 4M8 12h10"/></symbol>
+</svg>
+<div id="boot" class="boot"><div class="boot-inner"><span class="spinner"></span> Opening your workspace…</div></div>
+
+<section class="auth-screen" id="authScreen" hidden aria-labelledby="authTitle">
+  <div class="auth-main"><div class="auth-box">
+    <div class="brand auth-brand"><span class="brand-mark"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="4" y="5" width="15" height="15" rx="4" stroke="white" stroke-width="2"/><rect x="12" y="12" width="15" height="15" rx="4" fill="#4771ed" stroke="white" stroke-width="2"/><path d="M15.5 19.5h7m-3-3 3 3-3 3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><span class="brand-name">Relay</span><span class="brand-sub" style="display:block">Telegram workspace</span></span></div>
+    <div class="eyebrow">Welcome to Relay</div><h2 id="authTitle">Sign in to your workspace</h2><p id="authDescription">Enter your details to pick up where you left off.</p>
+    <div class="auth-tabs" aria-label="Account access"><button type="button" id="tabLogin" class="active">Sign in</button><button type="button" id="tabRegister">Create account</button></div>
+    <form id="authForm"><div class="field"><label class="form-label" for="username">Username</label><input class="input" id="username" autocomplete="username" placeholder="Your username" minlength="3" maxlength="32" required></div><div class="field"><label class="form-label" for="password">Password</label><input class="input" id="password" type="password" autocomplete="current-password" placeholder="Enter your password" required><p class="field-hint" id="passwordHint">Passwords are case-sensitive.</p></div><div class="message error auth-error" id="authMsg" role="alert"></div><button type="submit" class="btn primary full" id="authSubmit">Sign in <svg class="icon sm"><use href="#i-arrow"/></svg></button></form>
+    <div class="auth-note"><svg class="icon"><use href="#i-shield"/></svg><span>Each account has its own private workspace. Only use a Relay server you trust.</span></div>
+    <button class="btn subtle auth-back" id="authBack" type="button" hidden>Back to guest workspace</button>
+  </div></div>
+</section>
+
+<div id="app" class="shell" hidden>
+  <div class="mobile-backdrop" id="mobileBackdrop"></div>
+  <aside class="sidebar" id="sidebar" aria-label="Workspace navigation">
+    <a class="brand" href="/overview" data-route="/overview"><span class="brand-mark"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="4" y="5" width="15" height="15" rx="4" stroke="white" stroke-width="2"/><rect x="12" y="12" width="15" height="15" rx="4" fill="#4771ed" stroke="white" stroke-width="2"/><path d="M15.5 19.5h7m-3-3 3 3-3 3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><span class="brand-name">Relay</span><span class="brand-sub" style="display:block">Telegram workspace</span></span></a>
+    <div class="workspace-label">Workspace</div>
+    <nav class="nav-list" aria-label="Main navigation">
+      <a class="nav-link active" href="/overview" data-route="/overview" aria-current="page"><svg class="icon"><use href="#i-grid"/></svg>Overview</a>
+      <a class="nav-link" href="/channels" data-route="/channels"><svg class="icon"><use href="#i-channels"/></svg>Channels</a>
+      <a class="nav-link" href="/configuration" data-route="/configuration"><svg class="icon"><use href="#i-config"/></svg>Configuration</a>
+      <a class="nav-link" href="/activity" data-route="/activity"><svg class="icon"><use href="#i-activity"/></svg>Activity</a>
+    </nav>
+    <div class="workspace-label help-label">Support</div>
+    <nav class="nav-list" aria-label="Support navigation"><a class="nav-link" href="/recovery" data-route="/recovery"><svg class="icon"><use href="#i-shield"/></svg>Recovery center</a><a class="nav-link" href="/settings" data-route="/settings"><svg class="icon"><use href="#i-settings"/></svg>Settings</a></nav>
+    <div class="sidebar-spacer"></div>
+    <div class="side-card"><div class="side-card-top"><svg class="icon sm"><use href="#i-shield"/></svg> Your workspace, private</div><p>Your configuration and activity are isolated from other accounts.</p></div>
+    <div class="side-account"><div class="avatar" id="sideAvatar">G</div><div class="account-copy"><div class="account-name" id="sideName">Connecting…</div><div class="account-role" id="sideRole">Workspace</div></div><a href="/settings" data-route="/settings" title="Workspace settings" aria-label="Workspace settings"><svg class="icon sm"><use href="#i-settings"/></svg></a></div>
+  </aside>
+  <div class="main">
+    <header class="topbar"><div class="crumbs"><button class="icon-button mobile-menu" id="menuButton" type="button" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false"><svg class="icon"><use href="#i-menu"/></svg></button><span>Workspace</span><svg class="icon"><use href="#i-chevron"/></svg><b id="pageTitle">Overview</b></div><div class="top-actions"><span class="connection" id="connection" role="status"><i></i><span>Connecting</span></span><button class="icon-button" id="refreshButton" type="button" title="Refresh workspace" aria-label="Refresh workspace"><svg class="icon sm"><use href="#i-refresh"/></svg></button><button class="icon-button" id="themeBtn" type="button" title="Change appearance" aria-label="Change appearance"><svg class="icon sm"><use href="#i-sun"/></svg></button><button class="btn sm" id="topAuth" type="button" hidden>Sign in</button><a class="avatar" id="topAvatar" href="/settings" data-route="/settings" aria-label="Workspace settings">G</a></div></header>
+    <main class="content" id="mainContent">
+      <div class="notice guest-banner" id="guestBanner" hidden><div class="notice-icon"><svg class="icon"><use href="#i-lock"/></svg></div><div class="notice-copy"><strong>You're using a guest workspace.</strong><p>It stays in this browser. Signing in opens a separate workspace; guest data is not copied.</p></div><button class="btn sm" id="guestSignIn" type="button">Sign in</button></div>
+      <div class="notice warning" id="challengeNotice" hidden><div class="notice-icon"><svg class="icon"><use href="#i-lock"/></svg></div><div class="notice-copy"><strong>Telegram verification needed</strong><p id="challengeNoticeText">Your bot is waiting for the next sign-in step.</p></div><button class="btn sm" id="challengeOpen" type="button">Continue verification</button></div>
+
+      <section class="page" data-page="/overview" aria-labelledby="overviewTitle">
+        <div class="page-heading"><div><div class="eyebrow">Your workspace</div><h1 id="overviewTitle" tabindex="-1">Overview</h1><p>A clear view of your Telegram mirroring, all in one place.</p></div><div class="heading-actions"><a href="/configuration" data-route="/configuration" class="btn"><svg class="icon sm"><use href="#i-config"/></svg> Edit configuration</a><a href="/channels" data-route="/channels" class="btn primary"><svg class="icon sm"><use href="#i-channels"/></svg> View channels</a></div></div>
+        <div class="notice" id="setupNotice"><div class="notice-icon"><svg class="icon"><use href="#i-channels"/></svg></div><div class="notice-copy"><strong id="setupTitle">Let's get your workspace ready</strong><p id="setupText">Add your Telegram credentials and channel groups to start mirroring.</p></div><a href="/configuration" data-route="/configuration" class="btn sm" id="setupLink">Open configuration <svg class="icon sm"><use href="#i-arrow"/></svg></a></div>
+        <div class="stats-grid" aria-label="Workspace metrics">
+          <article class="card stat-card"><div class="stat-top"><span class="stat-label">Copies processed</span><span class="stat-icon"><svg class="icon"><use href="#i-send"/></svg></span></div><div class="stat-value" id="statMirrored">—</div><div class="stat-caption" id="mirroredCaption">Across this workspace</div></article>
+          <article class="card stat-card"><div class="stat-top"><span class="stat-label">Configured groups</span><span class="stat-icon green"><svg class="icon"><use href="#i-channels"/></svg></span></div><div class="stat-value" id="statGroups">—</div><div class="stat-caption">Source-to-destination groups</div></article>
+          <article class="card stat-card"><div class="stat-top"><span class="stat-label">Polls completed</span><span class="stat-icon amber"><svg class="icon"><use href="#i-refresh"/></svg></span></div><div class="stat-value" id="statPolls">—</div><div class="stat-caption">Checks for new messages</div></article>
+          <article class="card stat-card"><div class="stat-top"><span class="stat-label">Failures</span><span class="stat-icon red"><svg class="icon"><use href="#i-alert"/></svg></span></div><div class="stat-value" id="statFailed">—</div><div class="stat-caption">See activity for details</div></article>
+        </div>
+        <div class="overview-grid"><div class="stack"><article class="card"><div class="card-head"><div><h2>Recent activity</h2><p>The latest events from your workspace.</p></div><a class="text-link" href="/activity" data-route="/activity">View all <svg class="icon"><use href="#i-arrow"/></svg></a></div><div class="card-body activity-list" id="recentEvents"><div class="empty"><span class="empty-icon"><svg class="icon"><use href="#i-activity"/></svg></span><strong>No activity yet</strong><p>Events will appear here when you configure or start your bot.</p></div></div></article><article class="card"><div class="card-head"><div><h2>Your channel groups</h2><p>Your source and destination connections.</p></div><a class="text-link" href="/channels" data-route="/channels">View channels <svg class="icon"><use href="#i-arrow"/></svg></a></div><div class="card-body" id="groupSummary"><div class="small-summary"><span class="notice-icon"><svg class="icon"><use href="#i-channels"/></svg></span><div><strong>No groups configured</strong><p>Add your first group in configuration.</p></div></div></div></article></div>
+          <div class="stack"><article class="card"><div class="card-head"><div><h2>Mirroring controls</h2><p>You're always in control of what runs.</p></div><svg class="icon muted"><use href="#i-settings"/></svg></div><div class="card-body"><div class="status-panel" id="statusPanel"><div class="status-icon"><svg class="icon"><use href="#i-play"/></svg></div><div class="status-copy"><strong id="statusLabel">Checking status</strong><span id="statusDetail">Connecting to your workspace…</span></div><span class="pill" id="statusPill"><i></i>Checking</span></div><div class="switch-row"><div class="switch-copy"><strong>Dry run</strong><span>Poll only; don't send or edit messages.</span></div><label class="switch"><input type="checkbox" id="dryRun" checked aria-label="Enable dry run"><span></span></label></div><div class="control-actions"><button class="btn primary" id="btnStart" type="button" disabled><svg class="icon sm"><use href="#i-play"/></svg> Start mirroring</button><button class="btn" id="btnStop" type="button" disabled>Stop</button></div><p class="control-hint" id="controlHint">Add and validate a configuration before starting. Actions always require confirmation.</p></div></article><article class="card"><div class="card-head"><div><h2>A good place to start</h2><p>Set up safely in three steps.</p></div></div><div class="card-body" style="padding-top:7px"><ol class="field-list"><li><span class="field-num">1</span><div><strong>Configure your workspace</strong><p>Add your own Telegram credentials and exact chat titles.</p></div></li><li><span class="field-num">2</span><div><strong>Start with a dry run</strong><p>Check activity without sending or editing messages.</p></div></li><li><span class="field-num">3</span><div><strong>Go live when you're ready</strong><p>Confirm your settings and start mirroring.</p></div></li></ol></div></article></div></div>
+      </section>
+
+      <section class="page" data-page="/channels" aria-labelledby="channelsTitle" hidden><div class="page-heading"><div><div class="eyebrow">Your connections</div><h1 id="channelsTitle" tabindex="-1">Channels</h1><p>See the source and destination groups in your configuration.</p></div><div class="heading-actions"><a href="/configuration" data-route="/configuration" class="btn primary"><svg class="icon sm"><use href="#i-plus"/></svg> Configure groups</a></div></div><div class="toolbar"><label class="search"><span class="sr-only">Search channel groups</span><svg class="icon sm"><use href="#i-search"/></svg><input id="groupSearch" type="search" placeholder="Search groups or channels…"></label><span class="toolbar-count" id="groupCount">Loading groups…</span></div><div id="groupList" class="group-grid"></div><div class="card page-empty" id="groupEmpty" hidden><div class="empty"><span class="empty-icon"><svg class="icon"><use href="#i-channels"/></svg></span><strong id="groupEmptyTitle">No channel groups yet</strong><p id="groupEmptyText">Add the exact titles of the source and destination chats in your configuration.</p><a href="/configuration" data-route="/configuration" class="btn sm" id="groupEmptyLink">Open configuration <svg class="icon sm"><use href="#i-arrow"/></svg></a></div></div><div class="security-note"><svg class="icon"><use href="#i-shield"/></svg><p><strong>Before you start:</strong> The Telegram account must be a member of each source and have permission to post in each destination. Chat titles must uniquely match your Telegram dialog list exactly.</p></div></section>
+
+      <section class="page" data-page="/configuration" aria-labelledby="configTitle" hidden><div class="page-heading"><div><div class="eyebrow">Workspace setup</div><h1 id="configTitle" tabindex="-1">Configuration</h1><p>Manage the Telegram account and groups used by your bot.</p></div></div><div class="config-layout"><article class="card"><div class="card-head"><div><h2>Configuration editor</h2><p>Changes apply after the bot is restarted.</p></div><span class="pill"><svg class="icon sm"><use href="#i-lock"/></svg> Private</span></div><div class="card-body"><div class="editor-meta"><span>config.yaml <span id="dirtyLabel"></span></span><span>YAML</span></div><label for="yaml" class="sr-only">Workspace YAML configuration</label><textarea id="yaml" class="editor" spellcheck="false" placeholder="Paste your own YAML configuration here."></textarea><div class="editor-actions"><button class="btn primary" id="saveConfigButton" type="button">Save configuration</button><button class="btn" id="validateButton" type="button">Validate</button><span class="message" id="configMsg" role="status"></span></div><p class="control-hint">Secrets are redacted after saving; leaving a redacted value unchanged preserves the saved secret. Save requires confirmation.</p><p class="message warn" id="envNotice" hidden></p></div></article><div class="stack"><article class="card"><div class="card-head"><div><h2>What you'll need</h2><p>Provide these values in your YAML.</p></div></div><div class="card-body" style="padding-top:7px"><ol class="field-list"><li><span class="field-num">1</span><div><strong>Telegram API credentials</strong><p><span class="code">account_phone</span>, <span class="code">api_id</span> and <span class="code">api_hash</span>. Get your API credentials from <a class="text-link" href="https://my.telegram.org/apps" target="_blank" rel="noopener noreferrer">my.telegram.org <svg class="icon"><use href="#i-link"/></svg></a>.</p></div></li><li><span class="field-num">2</span><div><strong>Mirroring groups</strong><p>Add <span class="code">groups</span> with a name, <span class="code">sources</span> and <span class="code">destinations</span>. Use exact, unique Telegram chat titles.</p></div></li><li><span class="field-num">3</span><div><strong>Polling preferences</strong><p>Set <span class="code">delay</span> in seconds and an optional <span class="code">whitelist</span> for each group.</p></div></li></ol></div></article><article class="card"><div class="card-body"><div class="small-summary"><span class="notice-icon"><svg class="icon"><use href="#i-shield"/></svg></span><div><strong>Keep credentials private</strong><p>Only enter secrets on an instance you trust. Never commit them to a repository.</p></div></div></div></article></div></div></section>
+
+      <section class="page" data-page="/activity" aria-labelledby="activityTitle" hidden><div class="page-heading"><div><div class="eyebrow">Workspace history</div><h1 id="activityTitle" tabindex="-1">Activity</h1><p>Review recent bot events, warnings and errors.</p></div><div class="heading-actions"><button class="btn" id="activityRefresh" type="button"><svg class="icon sm"><use href="#i-refresh"/></svg> Refresh</button></div></div><article class="card"><div class="card-head"><div><h2>Event log</h2><p>Up to the most recent 200 events, newest first.</p></div><span class="pill" id="eventCount">Loading…</span></div><div class="activity-tools"><div class="toolbar"><label class="search"><span class="sr-only">Search activity</span><svg class="icon sm"><use href="#i-search"/></svg><input id="eventSearch" type="search" placeholder="Search activity…"></label><label><span class="sr-only">Filter activity by level</span><select class="select" id="eventLevel"><option value="all">All levels</option><option value="ERROR">Errors</option><option value="WARNING">Warnings</option><option value="SUCCESS">Success</option><option value="INFO">Info</option><option value="DEBUG">Debug</option></select></label></div></div><div class="activity-full" id="allEvents"></div></article></section>
+
+      <section class="page" data-page="/recovery" aria-labelledby="recoveryTitle" hidden>
+        <div class="page-heading">
+          <div><div class="eyebrow">Account continuity</div><h1 id="recoveryTitle" tabindex="-1">Recovery center</h1><p>Secure a separate Telegram session and manage account recovery tools.</p></div>
+          <div class="heading-actions"><a class="btn" href="https://telegram.org/support" target="_blank" rel="noopener noreferrer">Telegram support <svg class="icon sm"><use href="#i-link"/></svg></a></div>
+        </div>
+        <div class="recovery-hero">
+          <div class="rec-hero-copy"><div class="rec-overline"><span></span> YOUR ACCOUNT, YOUR CONTROL</div><h2>A safer way to stay connected.</h2><p>Create an encrypted backup of a dedicated recovery session, then keep it somewhere only you can access. This is a session backup, not a backup of your messages.</p><div class="rec-hero-tags"><span><svg class="icon sm"><use href="#i-shield"/></svg> Encrypted backups</span><span><svg class="icon sm"><use href="#i-lock"/></svg> Separate session</span></div></div>
+          <div class="rec-hero-art" aria-hidden="true"><svg viewBox="0 0 200 150" fill="none"><circle cx="110" cy="75" r="67" stroke="white" stroke-opacity=".1"/><circle cx="110" cy="75" r="51" stroke="white" stroke-opacity=".12"/><circle cx="110" cy="75" r="36" fill="white" fill-opacity=".07"/><path d="M110 39 82 50v21c0 22 14 36 28 43 14-7 28-21 28-43V50l-28-11Z" fill="#83A8FF" fill-opacity=".15" stroke="#ADC5FF" stroke-width="2"/><rect x="99" y="70" width="22" height="18" rx="4" stroke="#E8F0FF" stroke-width="2"/><path d="M104 70v-5a6 6 0 0 1 12 0v5m-6 7v4" stroke="#E8F0FF" stroke-width="2" stroke-linecap="round"/><circle cx="42" cy="40" r="3" fill="#8EAEFF"/><circle cx="169" cy="111" r="4" fill="#7FBED7"/></svg></div>
+        </div>
+        <div id="recoveryGuest" class="card rec-guest" hidden><span class="rec-feature-icon"><svg class="icon"><use href="#i-lock"/></svg></span><div><h2>Sign in to use recovery</h2><p>Recovery sessions belong to registered workspaces and cannot be used from a guest workspace. Sign in or create an account to continue.</p><button class="btn primary" id="recSignIn" type="button">Sign in to Relay <svg class="icon sm"><use href="#i-arrow"/></svg></button></div></div>
+        <div id="recoveryContent" hidden>
+          <div class="notice warning rec-insecure" id="recInsecure" hidden><div class="notice-icon"><svg class="icon"><use href="#i-alert"/></svg></div><div class="notice-copy"><strong>Connection is not HTTPS</strong><p>Do not enter Telegram credentials or passwords here. Use an HTTPS-protected instance that you control.</p></div></div>
+          <div class="rec-layout">
+            <div class="rec-main">
+              <article class="card rec-session">
+                <div class="rec-card-heading"><div class="rec-heading-icon"><svg class="icon"><use href="#i-shield"/></svg></div><div><div class="rec-kicker">YOUR RECOVERY SESSION</div><h2>Telegram connection</h2><p>A dedicated session, independent of your mirroring bot.</p></div><span class="pill" id="recState"><i></i> Loading</span></div>
+                <div class="rec-session-bottom"><div class="rec-account"><span class="rec-account-avatar" id="recAvatar"><svg class="icon"><use href="#i-lock"/></svg></span><div><strong id="recAccount">Checking session…</strong><p id="recDetail">Your recovery session does not start automatically.</p></div></div><div class="rec-session-actions"><button class="btn primary" type="button" id="recConnect">Connect account <svg class="icon sm"><use href="#i-arrow"/></svg></button><button class="btn" type="button" id="recDisconnect" hidden>Disconnect</button></div></div>
+                <div class="rec-inline-error" id="recError" role="status" hidden></div>
+              </article>
+              <div class="rec-section-heading"><div><div class="rec-kicker">RECOVERY TOOLKIT</div><h2>Manage access</h2><p>Actions use your own Telegram account and require your Relay password.</p></div></div>
+              <div class="rec-tool-grid">
+                <article class="card rec-tool"><span class="rec-feature-icon blue"><svg class="icon"><use href="#i-lock"/></svg></span><h3>Encrypted session backup</h3><p>Download an authenticated, password-protected file or QR image. Anyone who obtains the session and password can control the account.</p><div class="rec-tool-actions"><button class="btn sm primary" type="button" id="recExport" data-rec-online>Download backup</button><button class="btn sm" type="button" id="recQr" data-rec-online>Make QR backup</button><button class="btn sm subtle" type="button" id="recImport">Restore backup</button></div><div class="rec-qr" id="recQrPreview" hidden><img id="recQrImage" alt="Encrypted Relay recovery backup QR code"><div><strong>Encrypted QR backup</strong><p>Keep this image and your backup password private and separate.</p><a class="text-link" id="recQrDownload" download="relay-recovery-qr.png">Save QR image</a><button class="text-link rec-text-button" type="button" id="recQrClear">Hide & clear</button></div></div></article>
+                <article class="card rec-tool"><span class="rec-feature-icon violet"><svg class="icon"><use href="#i-inbox"/></svg></span><h3>Telegram login messages</h3><p>Read up to three recent messages from Telegram's official service account (777000). Results are temporary and are never saved by Relay.</p><div class="rec-tool-actions"><button class="btn sm" type="button" id="recCodes" data-rec-online>View login messages</button></div><div class="rec-messages" id="recMessages" hidden><div class="rec-messages-head"><strong>Official service messages</strong><button class="text-link rec-text-button" type="button" id="recMessagesClear">Clear</button></div><div id="recMessagesList"></div><p>Cleared automatically after one minute.</p></div></article>
+                <article class="card rec-tool"><span class="rec-feature-icon amber"><svg class="icon"><use href="#i-refresh"/></svg></span><h3>Change account phone</h3><p>Ask Telegram to send a code to a new number, then explicitly confirm the change. Telegram's security checks and waiting periods apply.</p><div class="rec-tool-actions"><button class="btn sm" type="button" id="recPhoneRequest" data-rec-online>Request code</button><button class="btn sm primary" type="button" id="recPhoneConfirm" hidden>Confirm phone change</button></div><p class="rec-pending" id="recPhonePending" hidden>A phone change is waiting for its Telegram verification code.</p></article>
+                <article class="card rec-tool"><span class="rec-feature-icon green"><svg class="icon"><use href="#i-activity"/></svg></span><h3>Verify & remember</h3><p>Check this session directly with Telegram, or schedule a reminder in your Telegram Saved Messages to refresh your backup.</p><div class="rec-tool-actions"><button class="btn sm" type="button" id="recVerify" data-rec-online>Verify session</button><button class="btn sm" type="button" id="recReminder" data-rec-online>Schedule reminder</button></div></article>
+              </div>
+              <article class="card rec-revoke"><div><div class="rec-kicker">DANGER ZONE</div><h2>Revoke recovery session</h2><p>Logs out this dedicated session from Telegram. Every backup of this session will stop working. Your separate mirroring session is not revoked.</p></div><button class="btn danger" type="button" id="recRevoke" data-rec-online>Revoke session</button></article>
+            </div>
+            <aside class="rec-aside">
+              <article class="card rec-side-card"><div class="rec-kicker">BEFORE YOU BEGIN</div><h2>Protect your way back in</h2><ol class="rec-checklist"><li><span>01</span><div><strong>Connect securely</strong><p>Use a trusted HTTPS Relay instance and your own credentials from <a href="https://my.telegram.org/apps" target="_blank" rel="noopener noreferrer">my.telegram.org</a>.</p></div></li><li><span>02</span><div><strong>Store backups separately</strong><p>Keep the encrypted file or QR and its unique password in separate, protected places.</p></div></li><li><span>03</span><div><strong>Verify periodically</strong><p>Sessions can expire or be revoked. Verify access and create a fresh backup when needed.</p></div></li></ol></article>
+              <article class="rec-warning"><svg class="icon"><use href="#i-alert"/></svg><div><strong>Session backups are sensitive</strong><p>Server administrators can access the stored Telegram session and API credentials. Without a valid backup or Telegram-approved verification, Relay cannot recover an account or bypass two-step verification.</p></div></article>
+              <article class="card rec-format"><div class="rec-kicker">BACKUP FORMAT</div><strong>Authenticated by design</strong><p>Relay uses AES-256-GCM with scrypt. Legacy <span class="mono">.tgback</span> files are not compatible; they use an unsafe legacy format.</p></article>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" data-page="/settings" aria-labelledby="settingsTitle" hidden><div class="page-heading"><div><div class="eyebrow">Your preferences</div><h1 id="settingsTitle" tabindex="-1">Settings</h1><p>Manage your workspace and appearance.</p></div></div><div class="settings-grid"><article class="card"><div class="card-head"><div><h2>Workspace</h2><p>Your account and session.</p></div></div><div class="card-body"><div class="settings-row"><div><strong id="settingsName">Connecting…</strong><p id="settingsRole">Private workspace</p></div><span class="pill"><svg class="icon sm"><use href="#i-lock"/></svg> Private</span></div><div class="settings-row"><div><strong id="accountActionTitle">Account access</strong><p id="accountActionDetail">Sign in to access your account workspace.</p></div><button class="btn sm" id="settingsAuth" type="button">Sign in</button></div></div></article><article class="card"><div class="card-head"><div><h2>Appearance</h2><p>Saved in this browser.</p></div></div><div class="card-body"><div class="theme-options" aria-label="Choose a color theme"><button type="button" class="theme-choice active" data-theme-choice="paper" style="--sw:#426be8"><i></i> Bright</button><button type="button" class="theme-choice" data-theme-choice="ocean" style="--sw:#1383a8"><i></i> Ocean</button><button type="button" class="theme-choice" data-theme-choice="slate" style="--sw:#33445f"><i></i> Slate</button><button type="button" class="theme-choice" data-theme-choice="ember" style="--sw:#a9734d"><i></i> Ember</button></div></div></article><article class="card danger-box"><div class="card-head"><div><h2>Reset workspace state</h2><p>This does not delete your configuration or Telegram session.</p></div></div><div class="card-body"><div class="settings-row"><div><strong>Clear counters & positions</strong><p>Stop the bot first. Resetting clears message and edit mappings; activity history is kept.</p></div><button class="btn danger sm" id="resetButton" type="button">Reset state</button></div></div></article></div></section>
+      <footer class="footer"><span>Relay &nbsp;·&nbsp; Your private Telegram workspace</span><span>Mirror only channels you own or have permission to copy.</span></footer>
+    </main>
+  </div>
+</div>
+
+<dialog id="confirmDialog" aria-labelledby="confirmTitle" aria-describedby="confirmText"><div class="dialog-inner"><div class="dialog-icon"><svg class="icon"><use href="#i-shield"/></svg></div><h2 id="confirmTitle">Please confirm</h2><p id="confirmText"></p><form method="dialog" class="dialog-actions"><button class="btn" value="cancel">Cancel</button><button class="btn primary" id="confirmAction" value="confirm">Confirm</button></form></div></dialog>
+<dialog id="challengeDialog" aria-labelledby="challengeTitle" aria-describedby="challengeText"><div class="dialog-inner"><div class="dialog-icon"><svg class="icon"><use href="#i-lock"/></svg></div><h2 id="challengeTitle">Verify your Telegram account</h2><p id="challengeText"></p><form id="challengeForm"><label class="form-label" for="challengeValue" id="challengeLabel">Verification code</label><input class="input" id="challengeValue" autocomplete="off" required maxlength="256"><div class="dialog-alert" id="challengeError" role="alert"></div><button type="button" class="text-link rec-text-button" id="challengeResend" hidden>Request another code</button><div class="dialog-actions"><button type="button" class="btn" id="challengeLater">Not now</button><button type="submit" class="btn primary" id="challengeSubmit">Continue</button></div></form></div></dialog>
+<dialog id="recDialog" aria-labelledby="recDialogTitle" aria-describedby="recDialogText"><div class="dialog-inner rec-dialog"><div class="dialog-icon"><svg class="icon"><use href="#i-shield"/></svg></div><h2 id="recDialogTitle">Recovery action</h2><p id="recDialogText"></p><form id="recForm" autocomplete="off"><div id="recFields"></div><div class="dialog-alert" id="recDialogError" role="alert"></div><div class="dialog-actions"><button type="button" class="btn" id="recCancel">Cancel</button><button type="submit" class="btn primary" id="recSubmit">Continue</button></div></form></div></dialog>
+<div class="toast-stack" id="toasts" aria-live="polite"></div>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const LS = {get:k=>{try{return localStorage.getItem(k)||''}catch(_){return ''}}, set:(k,v)=>{try{localStorage.setItem(k,v)}catch(_){}}, del:k=>{try{localStorage.removeItem(k)}catch(_){}}};
+const sharedToken = new URLSearchParams(location.search).get('token') || '';
+const themes = [['paper','Bright'],['ocean','Ocean'],['slate','Slate'],['ember','Ember']];
+const pages = {'/overview':'Overview','/channels':'Channels','/configuration':'Configuration','/activity':'Activity','/recovery':'Recovery center','/settings':'Settings'};
+const app = {guestKey:LS.get('tcd_guest'),token:LS.get('tcd_token'),theme:LS.get('tcd_theme')||'paper',me:null,requireLogin:false,allowRegistration:true,ready:false,authMode:'login',page:'/overview',status:null,config:null,events:[],dirty:false,refreshing:false,epoch:0,seenChallenge:null,recovery:null,openChallengeKey:null,recAction:null,recBusy:false,recQrUrl:'',recQrTimer:null,recMessagesTimer:null};
+if(!themes.some(([id])=>id===app.theme)) app.theme='paper';
+const esc = value => String(value==null?'':value).replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const icon = name => '<svg class="icon sm" aria-hidden="true"><use href="#i-'+name+'"></use></svg>';
+
+function applyTheme(){
+  document.body.dataset.theme=app.theme;
+  document.body.classList.toggle('light',app.theme==='paper'||app.theme==='ocean');
+  document.querySelectorAll('[data-theme-choice]').forEach(button=>{
+    const on=button.dataset.themeChoice===app.theme;
+    button.classList.toggle('active',on); button.setAttribute('aria-pressed',String(on));
+  });
+  $('themeBtn').title='Appearance: '+(themes.find(([id])=>id===app.theme)||themes[0])[1]+' — click to change';
+}
+function setTheme(name){if(!themes.some(([id])=>id===name))return;app.theme=name;LS.set('tcd_theme',name);applyTheme()}
+function toggleTheme(){const index=themes.findIndex(([id])=>id===app.theme);setTheme(themes[(index+1)%themes.length][0])}
+applyTheme();
+document.querySelectorAll('[data-theme-choice]').forEach(button=>button.addEventListener('click',()=>setTheme(button.dataset.themeChoice)));
+$('themeBtn').addEventListener('click',toggleTheme);
+
+function currentPath(){
+  const old={'#overview':'/overview','#groups':'/channels','#channels':'/channels','#config':'/configuration','#configuration':'/configuration','#activity':'/activity','#recovery':'/recovery','#settings':'/settings'};
+  if(old[location.hash]){const path=old[location.hash];history.replaceState({},'',path+location.search);return path}
+  const path=location.pathname.replace(/\/$/,'')||'/overview';
+  if(path==='/index.html')return '/overview';
+  return pages[path]?path:'/overview';
+}
+function closeMenu(){document.body.classList.remove('menu-open');$('menuButton').setAttribute('aria-expanded','false')}
+function showPage(path,{push=false,focus=false}={}){
+  if(!pages[path])path='/overview';
+  if(push && (location.pathname.replace(/\/$/,'')||'/overview')!==path)history.pushState({},'',path+location.search);
+  app.page=path;
+  if(path==='/recovery'&&app.ready)renderRecovery();
+  document.querySelectorAll('[data-page]').forEach(section=>{section.hidden=section.dataset.page!==path});
+  document.querySelectorAll('.nav-link[data-route]').forEach(link=>{const on=link.dataset.route===path;link.classList.toggle('active',on);if(on)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current')});
+  $('pageTitle').textContent=pages[path]; document.title=pages[path]+' · Relay'; closeMenu();
+  if(push){window.scrollTo({top:0,behavior:'auto'});if(focus){const title=document.querySelector('[data-page="'+path+'"] h1');if(title)title.focus({preventScroll:true})}}
+}
+showPage(currentPath());
+document.addEventListener('click',event=>{const link=event.target.closest('a[data-route]');if(!link||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;event.preventDefault();showPage(link.dataset.route,{push:true,focus:true})});
+window.addEventListener('popstate',()=>showPage(currentPath()));
+$('menuButton').addEventListener('click',()=>{const open=document.body.classList.toggle('menu-open');$('menuButton').setAttribute('aria-expanded',String(open))});
+$('mobileBackdrop').addEventListener('click',closeMenu);
+document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMenu()});
+window.addEventListener('beforeunload',event=>{if(app.dirty){event.preventDefault();event.returnValue=''}});
+
+async function api(path, options={}){
+  const {responseType,...fetchOptions}=options;
+  const headers=Object.assign({'Content-Type':'application/json','X-Token':sharedToken,'X-Guest-Key':app.guestKey},fetchOptions.headers||{});
+  if(app.token)headers.Authorization='Bearer '+app.token;
+  const response=await fetch(path,{...fetchOptions,headers,credentials:'same-origin',cache:'no-store'});
+  const guest=response.headers.get('X-New-Guest-Key');if(guest){app.guestKey=guest;LS.set('tcd_guest',guest)}
+  const data=(response.headers.get('Content-Type')||'').includes('json')?await response.json():(responseType==='blob'&&response.ok?await response.blob():await response.text());
+  if(!response.ok){const error=new Error(data&&data.error?data.error:'Request failed (HTTP '+response.status+')');error.status=response.status;throw error}
+  return data;
+}
+function toast(message,kind=''){
+  const node=document.createElement('div');node.className='toast '+kind;node.textContent=message;$('toasts').appendChild(node);setTimeout(()=>node.remove(),4800);
+}
+function busy(button,on,label){
+  if(on){button.dataset.original=button.innerHTML;button.disabled=true;button.innerHTML='<span class="spinner" aria-hidden="true"></span> '+esc(label||'Working…')}
+  else{if(button.dataset.original)button.innerHTML=button.dataset.original;button.disabled=false}
+}
+function setConnection(value){const el=$('connection');el.classList.toggle('online',value==='online');el.classList.toggle('offline',value==='offline');el.querySelector('span').textContent=value==='online'?'Connected':value==='offline'?'Connection lost':'Connecting'}
+function count(value,unit){const n=Number(value)||0;return n+' '+unit+(n===1?'':'s')}
+function timeString(value){if(!value)return '';const date=new Date(value);return Number.isNaN(date.getTime())?String(value):date.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}
+function levelClass(level){return ({ERROR:'error',WARNING:'warning',SUCCESS:'success'})[String(level).toUpperCase()]||''}
+
+function eventMarkup(event){
+  const level=levelClass(event.level), name=level==='error'?'alert':level==='success'?'shield':'activity';
+  return '<div class="event-row"><span class="event-icon '+level+'">'+icon(name)+'</span><div><div class="event-title">'+esc((event.kind||'event').replace(/[-_]/g,' '))+'</div><div class="event-message">'+esc(event.message)+'</div></div><time class="event-time" datetime="'+esc(event.time||'')+'">'+esc(timeString(event.time))+'</time></div>';
+}
+function emptyEvents(filtered=false){return '<div class="empty"><span class="empty-icon">'+icon(filtered?'search':'activity')+'</span><strong>'+(filtered?'No matching events':'No activity yet')+'</strong><p>'+(filtered?'Try another search or level filter.':'Events will appear here when you configure or start your bot.')+'</p></div>'}
+function renderEvents(){
+  const all=app.events.slice().reverse();
+  $('recentEvents').innerHTML=all.length?all.slice(0,5).map(eventMarkup).join(''):emptyEvents();
+  const q=$('eventSearch').value.trim().toLowerCase(),level=$('eventLevel').value;
+  const filtered=all.filter(event=>(level==='all'||String(event.level).toUpperCase()===level)&&(!q||[event.kind,event.message,event.level].join(' ').toLowerCase().includes(q)));
+  $('eventCount').textContent=count(filtered.length,'event');
+  $('allEvents').innerHTML=filtered.length?filtered.map(eventMarkup).join(''):emptyEvents(Boolean(q||level!=='all'));
+}
+$('eventSearch').addEventListener('input',renderEvents);$('eventLevel').addEventListener('change',renderEvents);
+
+function groupMarkup(group){
+  const sources=Array.isArray(group.sources)?group.sources:[],destinations=Array.isArray(group.destinations)?group.destinations:[],words=Array.isArray(group.whitelist)?group.whitelist:[];
+  return '<article class="card group-card"><div class="group-top"><div class="group-heading"><span class="group-icon">'+icon('channels')+'</span><div><h3>'+esc(group.name||'Untitled group')+'</h3><p>'+esc(count(sources.length,'source'))+' · '+esc(count(destinations.length,'destination'))+'</p></div></div><span class="pill">Configured</span></div><div class="group-path"><div class="path-box"><div class="path-label">Sources</div><div class="path-value">'+esc(sources.join(', ')||'—')+'</div></div><span class="path-arrow">'+icon('arrow')+'</span><div class="path-box"><div class="path-label">Destinations</div><div class="path-value">'+esc(destinations.join(', ')||'—')+'</div></div></div><div class="group-foot">'+(words.length?'Keywords: '+esc(words.join(', ')):'No keyword filter')+'</div></article>';
+}
+function renderGroups(){
+  const groups=Array.isArray(app.status?.groups)?app.status.groups:[],q=$('groupSearch').value.trim().toLowerCase();
+  const filtered=groups.filter(group=>[group.name,...(group.sources||[]),...(group.destinations||[])].join(' ').toLowerCase().includes(q));
+  $('groupCount').textContent=count(filtered.length,'group');$('groupList').innerHTML=filtered.map(groupMarkup).join('');$('groupEmpty').hidden=filtered.length>0;
+  $('groupEmptyTitle').textContent=q?'No matching groups':'No channel groups yet';$('groupEmptyText').textContent=q?'Try a different group or channel name.':'Add the exact titles of the source and destination chats in your configuration.';$('groupEmptyLink').hidden=Boolean(q);
+  if(groups.length){const sources=groups.reduce((sum,group)=>sum+(group.sources||[]).length,0),destinations=groups.reduce((sum,group)=>sum+(group.destinations||[]).length,0);$('groupSummary').innerHTML='<div class="small-summary"><span class="notice-icon">'+icon('channels')+'</span><div><strong>'+esc(count(groups.length,'group'))+' configured</strong><p>'+esc(count(sources,'source'))+' · '+esc(count(destinations,'destination'))+'</p></div></div>'}
+  else $('groupSummary').innerHTML='<div class="small-summary"><span class="notice-icon">'+icon('channels')+'</span><div><strong>No groups configured</strong><p>Add your first group in configuration.</p></div></div>';
+}
+$('groupSearch').addEventListener('input',renderGroups);
+
+function renderStatus(){
+  const s=app.status||{},cfg=app.config||{}, counters=s.stats?.counters||{},groupCount=(s.groups||[]).length;
+  const state=s.state||'stopped',active=['starting','running','stopping'].includes(state),good=cfg.validation_error===null&&!(cfg.env_missing||[]).length;
+  $('statMirrored').textContent=Number(counters.mirrored||0).toLocaleString();$('statGroups').textContent=groupCount.toLocaleString();$('statPolls').textContent=Number(counters.polls||0).toLocaleString();$('statFailed').textContent=Number(counters.failed||0).toLocaleString();
+  $('mirroredCaption').textContent='Includes dry-run counts';
+  const labels={starting:'Starting',running:'Running',stopping:'Stopping',stopped:'Stopped',error:'Needs attention'};
+  $('statusLabel').textContent=labels[state]||state;
+  $('statusDetail').textContent=s.error|| (s.telegram_challenge?'Waiting for Telegram verification.':state==='running'?(s.mode==='dry-run'?'Worker running · dry-run mode':'Worker running · live mode'):state==='starting'?'Connecting to Telegram and checking channel access…':state==='stopping'?'Stopping the bot…':'Your bot is not running.');
+  $('statusPanel').className='status-panel '+(state==='running'?'running':state==='error'?'error':'');
+  $('statusPill').className='pill '+(state==='running'?'running':state==='error'?'error':'');$('statusPill').innerHTML='<i></i>'+esc(labels[state]||state);
+  $('btnStart').disabled=active||!good;$('btnStop').disabled=!active;$('dryRun').disabled=active;$('resetButton').disabled=Boolean(s.thread_alive);
+  $('controlHint').textContent=active?'Stop the bot before changing its mode or resetting state.':good?'Starting and stopping always require your confirmation.':'Save a valid configuration and set any missing environment variables before starting.';
+  if(good){$('setupTitle').textContent='Your configuration is ready';$('setupText').textContent='Try a dry run first, then review the activity before going live.';$('setupLink').textContent='Review configuration'}
+  else{$('setupTitle').textContent="Let's get your workspace ready";$('setupText').textContent='Add your Telegram credentials and channel groups to start mirroring.';$('setupLink').textContent='Open configuration'}
+  if(!app.dirty)$('yaml').value=cfg.redacted||'';
+  $('envNotice').hidden=!(cfg.env_missing||[]).length;$('envNotice').textContent=(cfg.env_missing||[]).length?'Missing server environment variables: '+cfg.env_missing.join(', ')+'. The bot cannot start until these are set.':'';
+  renderGroups();
+  const pendingChallenge=currentChallenge(), safeTransport=recoveryTransportSafe();$('challengeNotice').hidden=!pendingChallenge;
+  $('challengeNoticeText').textContent=!safeTransport?'Telegram verification requires a trusted HTTPS connection or local loopback.':pendingChallenge?.source==='recovery'?'Your recovery session is waiting for the next sign-in step.':'Your bot is waiting for the next sign-in step.';
+  $('challengeOpen').disabled=!safeTransport;
+  if($('challengeDialog').open&&(!safeTransport||!pendingChallenge||app.openChallengeKey!==pendingChallenge.key))$('challengeDialog').close();
+  if(safeTransport&&pendingChallenge&&app.seenChallenge!==pendingChallenge.key&&!document.querySelector('dialog[open]')){app.seenChallenge=pendingChallenge.key;openChallenge()}
+}
+
+async function refresh({announce=false}={}){
+  if(!app.ready||app.refreshing)return;app.refreshing=true;const epoch=app.epoch;
+  try{
+    const [status,events,config,recovery]=await Promise.all([api('/api/status'),api('/api/events?limit=200'),api('/api/config'),app.me&&!app.me.is_guest?api('/api/recovery/status').catch(error=>{if(error.status===403)return null;throw error}):Promise.resolve(null)]);
+    if(epoch!==app.epoch)return;
+    if(app.me&&!app.me.is_guest&&status.identity?.is_guest){app.ready=false;app.token='';LS.del('tcd_token');await init();return}
+    app.status=status;app.events=events.events||[];app.config=config;app.recovery=recovery;setConnection('online');renderStatus();renderEvents();renderRecovery();if(announce)toast('Workspace refreshed','ok');
+  }catch(error){
+    if(epoch!==app.epoch)return;setConnection('offline');
+    if(error.status===401){app.ready=false;app.token='';LS.del('tcd_token');await init()}
+    else if(announce)toast('Refresh failed: '+error.message,'error');
+  }finally{app.refreshing=false}
+}
+$('refreshButton').addEventListener('click',()=>refresh({announce:true}));$('activityRefresh').addEventListener('click',()=>refresh({announce:true}));
+setInterval(()=>{if(app.ready&&!document.hidden)refresh()},5000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&app.ready)refresh()});
+
+function askConfirm(title,text,label='Confirm',danger=false){
+  const dialog=$('confirmDialog');$('confirmTitle').textContent=title;$('confirmText').textContent=text;$('confirmAction').textContent=label;$('confirmAction').className='btn '+(danger?'danger':'primary');
+  if(typeof dialog.showModal!=='function')return Promise.resolve(window.confirm(title+'\n\n'+text));
+  return new Promise(resolve=>{dialog.addEventListener('close',()=>resolve(dialog.returnValue==='confirm'),{once:true});dialog.showModal()});
+}
+async function startBot(){
+  const dry=$('dryRun').checked;
+  const approved=await askConfirm(dry?'Start a dry run?':'Start live mirroring?',dry?'The bot will connect to Telegram and poll for messages, but will not send or edit them. Live checkpoints are not advanced.':'The bot will connect to Telegram and send messages to your configured destinations. Make sure you have permission to copy them.',dry?'Start dry run':'Start live bot');if(!approved)return;
+  const button=$('btnStart');busy(button,true,'Starting…');
+  try{const result=await api('/api/start',{method:'POST',body:JSON.stringify({confirm:true,dry_run:dry})});if(!result.ok)throw new Error(result.message||'Could not start');toast('Starting mirroring. Complete Telegram verification if requested.','ok')}
+  catch(error){toast(error.message,'error')}finally{busy(button,false);await refresh()}
+}
+async function stopBot(){
+  if(!await askConfirm('Stop mirroring?','The bot will stop polling Telegram. Your configuration and saved state will stay in this workspace.','Stop bot'))return;
+  const button=$('btnStop');busy(button,true,'Stopping…');
+  try{const result=await api('/api/stop',{method:'POST',body:JSON.stringify({confirm:true})});toast(result.message||'Stop requested',result.ok?'ok':'error')}
+  catch(error){toast(error.message,'error')}finally{busy(button,false);await refresh()}
+}
+async function resetState(){
+  if(!await askConfirm('Reset workspace state?','This permanently clears this workspace’s counters, positions and message mappings. Your activity history, configuration and Telegram session are kept. The bot must be stopped.','Reset state',true))return;
+  const button=$('resetButton');busy(button,true,'Resetting…');
+  try{await api('/api/reset',{method:'POST',body:JSON.stringify({confirm:true})});toast('Workspace state reset','ok');await refresh()}
+  catch(error){toast(error.message,'error')}finally{busy(button,false);renderStatus()}
+}
+$('btnStart').addEventListener('click',startBot);$('btnStop').addEventListener('click',stopBot);$('resetButton').addEventListener('click',resetState);
+
+function configMessage(message,kind=''){const el=$('configMsg');el.className='message '+kind;el.textContent=message}
+$('yaml').addEventListener('input',()=>{app.dirty=true;$('dirtyLabel').textContent=' · Unsaved changes';configMessage('')});
+async function validateConfig(){
+  const button=$('validateButton');busy(button,true,'Validating…');configMessage('');
+  try{const result=await api('/api/config/validate',{method:'POST',body:JSON.stringify({yaml:$('yaml').value})});configMessage(result.ok?'Valid · '+count(result.groups,'group')+', '+result.delay+'s delay':'Invalid · '+result.error,result.ok?'ok':'error')}
+  catch(error){configMessage(error.message,'error')}finally{busy(button,false)}
+}
+async function saveConfig(){
+  if(!await askConfirm('Save configuration?','This replaces the configuration in your private workspace. Unchanged redacted secrets are preserved. Restart the bot to apply changes.','Save configuration'))return;
+  const button=$('saveConfigButton');busy(button,true,'Saving…');configMessage('');
+  try{const result=await api('/api/config',{method:'POST',body:JSON.stringify({confirm:true,yaml:$('yaml').value})});app.dirty=false;$('dirtyLabel').textContent='';configMessage('Saved · '+result.message,'ok');toast('Configuration saved. Restart the bot to apply changes.','ok');await refresh()}
+  catch(error){configMessage(error.message,'error');toast(error.message,'error')}finally{busy(button,false)}
+}
+$('validateButton').addEventListener('click',validateConfig);$('saveConfigButton').addEventListener('click',saveConfig);
+
+function currentChallenge(){
+  const mirror=app.status?.telegram_challenge, recovery=app.recovery?.challenge;
+  // Prefer the recovery prompt while the user is on that page, but preserve a
+  // visible route to mirroring verification when both sessions need attention.
+  if(recovery&&app.page==='/recovery')return {source:'recovery',challenge:recovery,key:'recovery-'+recovery.id};
+  if(mirror)return {source:'mirror',challenge:mirror,key:'mirror-'+mirror.id};
+  if(recovery)return {source:'recovery',challenge:recovery,key:'recovery-'+recovery.id};
+  return null;
+}
+function showChallengeDetails(active){
+  const challenge=active.challenge,password=challenge.kind==='password';
+  $('challengeTitle').textContent=password?'Telegram two-step verification':'Enter your Telegram code';
+  const deliveries={app:'Telegram selected your existing Telegram app for delivery. Check the official Telegram chat on a signed-in device.',sms:'Telegram selected SMS delivery to your phone number.',call:'Telegram selected phone-call verification. Listen for the code.',flashcall:'Telegram selected flash-call verification. Enter the number that called you as the code.',missedcall:'Telegram selected missed-call verification. Enter the final digits of the number that called you.',email:'Telegram selected email verification. Check the email associated with this Telegram account.',fragment:'Telegram selected Fragment delivery. Follow Telegram’s official instructions.',unknown:'Check your Telegram app, phone or email as directed by Telegram.'};
+  $('challengeText').textContent=(active.source==='recovery'?'Recovery session. ':'Mirroring session. ')+(password?'Telegram requires this account’s two-step verification password. This is not your Relay password.':(deliveries[challenge.delivery]||deliveries.unknown)+' Telegram decides where codes go; SMS is not guaranteed.')+' Enter it only on a trusted HTTPS Relay instance you control.';
+  $('challengeLabel').textContent=password?'Telegram two-step password':(challenge.length?challenge.length+'-character Telegram code':'Telegram sign-in code');
+  $('challengeValue').type=password?'password':'text';$('challengeValue').inputMode=password||challenge.code_format!=='numeric'?'text':'numeric';$('challengeValue').autocomplete=password?'off':'one-time-code';
+  $('challengeError').textContent=challenge.notice||'';$('challengeResend').hidden=password||active.source!=='recovery';
+}
+function openChallenge(){
+  if(!recoveryTransportSafe()){toast('Use a trusted HTTPS instance for Telegram verification.','error');return}
+  const active=currentChallenge();if(!active)return;app.openChallengeKey=active.key;showChallengeDetails(active);$('challengeValue').value='';
+  if(!$('challengeDialog').open)$('challengeDialog').showModal();setTimeout(()=>$('challengeValue').focus(),50);
+}
+$('challengeOpen').addEventListener('click',openChallenge);$('challengeLater').addEventListener('click',()=>{$('challengeValue').value='';$('challengeDialog').close()});
+$('challengeDialog').addEventListener('close',()=>{$('challengeValue').value=''});
+$('challengeResend').addEventListener('click',async()=>{
+  const active=currentChallenge();if(!active||active.source!=='recovery'||active.challenge.kind!=='code'||active.key!==app.openChallengeKey)return;
+  const button=$('challengeResend');busy(button,true,'Requesting…');$('challengeSubmit').disabled=true;$('challengeLater').disabled=true;$('challengeError').textContent='';
+  try{
+    const result=await api('/api/recovery/resend',{method:'POST',body:JSON.stringify({confirm:true,id:active.challenge.id})});
+    if(app.recovery)app.recovery.challenge=result.challenge;
+    $('challengeValue').value='';const updated=currentChallenge();if(updated&&updated.key===active.key)showChallengeDetails(updated);
+    toast(result.message||'Telegram accepted the request.','ok');
+  }catch(error){$('challengeError').textContent=error.message}
+  finally{busy(button,false);$('challengeSubmit').disabled=false;$('challengeLater').disabled=false}
+});
+$('challengeForm').addEventListener('submit',async event=>{
+  event.preventDefault();const active=currentChallenge();if(!active||active.key!==app.openChallengeKey)return;const challenge=active.challenge,button=$('challengeSubmit');busy(button,true,'Submitting…');$('challengeError').textContent='';$('challengeResend').disabled=true;
+  try{const path=active.source==='recovery'?'/api/recovery/challenge':'/api/telegram/challenge';await api(path,{method:'POST',body:JSON.stringify({confirm:true,id:challenge.id,kind:challenge.kind,value:$('challengeValue').value})});$('challengeValue').value='';$('challengeDialog').close();toast('Verification submitted. Waiting for Telegram…','ok');setTimeout(()=>refresh(),800)}
+  catch(error){$('challengeError').textContent=error.message}finally{busy(button,false);$('challengeResend').disabled=false}
+});
+
+/* Recovery actions never use fabricated data. Each action calls the current workspace API. */
+const recRelayField = '<div class="field"><label class="form-label" for="recRelayPassword">Relay password</label><input class="input" id="recRelayPassword" type="password" autocomplete="current-password" maxlength="1024" required><p class="field-hint">Re-enter your Relay workspace password to authorize this action.</p></div>';
+const recBackupField = '<div class="field"><label class="form-label" for="recBackupPassword">Backup password</label><input class="input" id="recBackupPassword" type="password" autocomplete="new-password" minlength="12" maxlength="256" required><p class="field-hint">Use a unique password of at least 12 characters. Relay cannot recover it for you.</p></div>';
+function recField(id,label,type='text',extra=''){
+  return '<div class="field"><label class="form-label" for="'+id+'">'+label+'</label><input class="input" id="'+id+'" type="'+type+'" '+extra+' required></div>';
+}
+function clearRecoveryMessages(){clearTimeout(app.recMessagesTimer);$('recMessagesList').textContent='';$('recMessages').hidden=true}
+function clearRecoveryQr(){clearTimeout(app.recQrTimer);if(app.recQrUrl)URL.revokeObjectURL(app.recQrUrl);app.recQrUrl='';$('recQrImage').removeAttribute('src');$('recQrDownload').removeAttribute('href');$('recQrPreview').hidden=true}
+function recoveryTransportSafe(){return location.protocol==='https:'||['localhost','127.0.0.1','::1','[::1]'].includes(location.hostname)}
+function renderRecovery(){
+  const guest=!app.me||app.me.is_guest, r=app.recovery;
+  $('recoveryGuest').hidden=!guest;$('recoveryContent').hidden=guest;
+  const transportSafe=recoveryTransportSafe();$('recInsecure').hidden=transportSafe;
+  if(guest)return;
+  const state=r?.state||'loading', online=state==='connected', busyState=state==='connecting';
+  const labels={loading:'Loading',disconnected:'Not connected',connecting:'Connecting',connected:'Connected',error:'Needs attention'};
+  $('recState').className='pill '+(online?'running':state==='error'?'error':'');$('recState').innerHTML='<i></i> '+esc(labels[state]||state);
+  $('recAccount').textContent=online?(r.account?.name||'Telegram account'):busyState?'Connecting to Telegram…':state==='loading'?'Checking session…':'No active recovery session';
+  $('recDetail').textContent=online?[r.account?.username?'@'+r.account.username:'',r.account?.phone_masked||''].filter(Boolean).join(' · '):busyState?(r.challenge?'Waiting for Telegram verification.':'A Telegram verification step may appear shortly.'):(r?.has_credentials?'Saved credentials available. Connect when you need them.':'Use your own Telegram API credentials to connect.');
+  $('recConnect').hidden=online||busyState;$('recConnect').disabled=state==='loading'||!transportSafe;$('recConnect').innerHTML=esc(r?.has_credentials?'Connect saved session':'Sign in to Telegram')+' '+icon('arrow');
+  $('recDisconnect').hidden=!online&&!busyState;$('recDisconnect').textContent=busyState?'Cancel connection':'Disconnect';
+  $('recError').hidden=!(r?.error||r?.hint);$('recError').textContent=r?.hint||r?.error||'';
+  document.querySelectorAll('[data-rec-online]').forEach(button=>button.disabled=!online||!transportSafe);
+  $('recImport').disabled=!transportSafe||state==='loading'||online||busyState;
+  $('recImport').title=online||busyState?'Disconnect the recovery session before restoring':'';
+  $('recPhoneConfirm').hidden=!r?.phone_change_pending;$('recPhoneConfirm').disabled=!online||!transportSafe;
+  $('recPhonePending').hidden=!r?.phone_change_pending;
+}
+function recoveryDialog(action){
+  if(!recoveryTransportSafe()){toast('Use a trusted HTTPS instance for recovery actions.','error');return}
+  const r=app.recovery||{};let title='',description='',fields='',button='Continue',danger=false;
+  switch(action){
+    case 'connect':
+      title='Sign in to Telegram';button=r.has_credentials?'Connect saved session':(r.has_session_file?'Connect / request code':'Request sign-in code');
+      description='Enter your Telegram number and your own Telegram API credentials. Telegram chooses where to deliver the sign-in code; if two-step verification is enabled, its password is requested next.';
+      fields=(r.has_credentials?'<div class="field"><label class="form-label" for="recCredentialsMode">Telegram credentials</label><select class="select" id="recCredentialsMode"><option value="saved">Use saved recovery credentials</option><option value="new">Enter credentials</option></select></div>':'')+
+        '<div id="recCredentialsFields">'+recField('recPhone','Telegram phone number','tel','placeholder="+234…" maxlength="16" autocomplete="tel"')+recField('recApiId','Telegram API ID','text','inputmode="numeric" maxlength="10"')+recField('recApiHash','Telegram API hash','password','maxlength="32" autocomplete="off"')+'<p class="field-hint">Get your own API ID and hash at my.telegram.org/apps. They are stored on this server for reconnection. Telegram may send the code to an existing app, SMS or another method it chooses. Each Relay workspace holds one recovery session; use a separate Relay account for another Telegram account.</p></div>'+recRelayField;
+      break;
+    case 'export':case 'qr':
+      title=action==='qr'?'Create encrypted QR backup':'Download encrypted backup';button=action==='qr'?'Create QR image':'Download backup';
+      description='The backup contains a live Telegram session and your API credentials, encrypted with the password you choose.';
+      fields='<div class="danger-hint">Anyone with both the backup and its password can control this Telegram account. Store them separately and never share either.</div>'+recBackupField+recField('recBackupAgain','Confirm backup password','password','autocomplete="new-password" minlength="12" maxlength="256"')+recRelayField;break;
+    case 'import':
+      title='Restore a recovery backup';button='Verify & restore';
+      description='Relay will decrypt the file in memory, verify the session with Telegram, then replace the saved recovery session. The current session must be disconnected.';
+      fields='<div class="danger-hint">Only Relay .rlybackup files and Relay QR PNGs are supported. Legacy .tgback files cannot be imported.</div><div class="field"><label class="form-label" for="recFile">Backup file or QR image</label><input class="input" id="recFile" type="file" accept=".rlybackup,.png,image/png" required><p class="field-hint">Maximum file size: 1 MB.</p></div>'+recBackupField+recRelayField;break;
+    case 'codes':
+      title='View Telegram login messages';button='Retrieve messages';
+      description='Fetch up to three recent messages only from Telegram’s official service account (777000). Messages may contain login codes and clear automatically after one minute.';
+      fields=recRelayField;break;
+    case 'verify':
+      title='Verify recovery session';button='Verify with Telegram';
+      description='Contact Telegram to check whether this recovery session is still authorized. This does not create a new backup.';fields=recRelayField;break;
+    case 'phoneRequest':
+      title='Request phone-change code';button='Request Telegram code';
+      description='Telegram will send or request a verification code for the new number. This step does not change the number yet.';
+      fields=recField('recNewPhone','New phone number','tel','placeholder="+234…" maxlength="16" autocomplete="tel"')+recRelayField;break;
+    case 'phoneConfirm':
+      title='Confirm phone-number change';button='Change phone number';danger=true;
+      description='This changes the phone number on your Telegram account. Enter the code sent by Telegram and type CHANGE to confirm.';
+      fields=recField('recPhoneCode','Telegram verification code','text','autocomplete="one-time-code" maxlength="64"')+recField('recAck','Type CHANGE to confirm','text','autocomplete="off" maxlength="6"')+recRelayField;break;
+    case 'reminder':
+      title='Schedule a Telegram reminder';button='Schedule reminder';
+      description='Telegram will schedule a reminder in your own Saved Messages. The message contains no session, code or password.';
+      fields=recField('recDays','Remind me in days','number','min="1" max="365" step="1" value="30"')+recRelayField;break;
+    case 'revoke':
+      title='Revoke recovery session';button='Revoke session';danger=true;
+      description='Telegram will log out this recovery session. All backups of this session become unusable; your separate mirroring session is not revoked.';
+      fields=recField('recAck','Type REVOKE to confirm','text','autocomplete="off" maxlength="6"')+recRelayField;break;
+    default:return;
+  }
+  app.recAction=action;$('recDialogTitle').textContent=title;$('recDialogText').textContent=description;$('recFields').innerHTML=fields;$('recDialogError').textContent='';$('recSubmit').textContent=button;$('recSubmit').className='btn '+(danger?'danger':'primary');
+  const mode=$('recCredentialsMode'), credentialFields=$('recCredentialsFields');
+  if(mode&&credentialFields){const toggle=()=>{const useNew=mode.value==='new';credentialFields.hidden=!useNew;credentialFields.querySelectorAll('input').forEach(input=>input.required=useNew);$('recSubmit').textContent=useNew?(r.has_session_file?'Connect / request code':'Request sign-in code'):'Connect saved session'};mode.addEventListener('change',toggle);toggle()}
+  $('recDialog').showModal();setTimeout(()=>{const field=$('recDialog').querySelector('input:not([type=file]):not([hidden]),select');if(field&&!field.closest('[hidden]'))field.focus()},40);
+}
+function displayRecoveryMessages(messages){
+  clearRecoveryMessages();const list=$('recMessagesList');
+  if(!messages.length){const empty=document.createElement('p');empty.textContent='No recent official service messages were found.';list.appendChild(empty)}
+  for(const message of messages){const box=document.createElement('div');box.className='rec-message';const date=document.createElement('time');date.textContent=timeString(message.date);const text=document.createElement('div');text.textContent=message.text;box.append(date,text);list.appendChild(box)}
+  $('recMessages').hidden=false;app.recMessagesTimer=setTimeout(clearRecoveryMessages,60000);
+}
+function displayRecoveryQr(blob){
+  clearRecoveryQr();app.recQrUrl=URL.createObjectURL(blob);$('recQrImage').src=app.recQrUrl;$('recQrDownload').href=app.recQrUrl;$('recQrPreview').hidden=false;app.recQrTimer=setTimeout(clearRecoveryQr,120000);
+}
+async function base64File(file){
+  if(!file||file.size>1024*1024)throw new Error('Choose a file under 1 MB.');
+  const bytes=new Uint8Array(await file.arrayBuffer());let result='';for(let i=0;i<bytes.length;i+=0x8000)result+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(result);
+}
+function downloadBlob(blob,name){const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=name;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),5000)}
+$('recSignIn').addEventListener('click',requestAuth);
+$('recConnect').addEventListener('click',()=>recoveryDialog('connect'));
+$('recExport').addEventListener('click',()=>recoveryDialog('export'));$('recQr').addEventListener('click',()=>recoveryDialog('qr'));$('recImport').addEventListener('click',()=>recoveryDialog('import'));
+$('recCodes').addEventListener('click',()=>recoveryDialog('codes'));$('recVerify').addEventListener('click',()=>recoveryDialog('verify'));
+$('recPhoneRequest').addEventListener('click',()=>recoveryDialog('phoneRequest'));$('recPhoneConfirm').addEventListener('click',()=>recoveryDialog('phoneConfirm'));
+$('recReminder').addEventListener('click',()=>recoveryDialog('reminder'));$('recRevoke').addEventListener('click',()=>recoveryDialog('revoke'));
+$('recMessagesClear').addEventListener('click',clearRecoveryMessages);$('recQrClear').addEventListener('click',clearRecoveryQr);
+$('recDisconnect').addEventListener('click',async()=>{
+  if(!await askConfirm('Disconnect recovery session?','This closes the connection on the server but does not revoke the session or invalidate backups.','Disconnect'))return;
+  const button=$('recDisconnect');busy(button,true,'Disconnecting…');
+  try{const result=await api('/api/recovery/disconnect',{method:'POST',body:JSON.stringify({confirm:true})});clearRecoveryMessages();clearRecoveryQr();toast(result.message,'ok')}
+  catch(error){toast(error.message,'error')}finally{busy(button,false);await refresh();renderRecovery()}
+});
+$('recCancel').addEventListener('click',()=>{if(!app.recBusy)$('recDialog').close()});
+$('recDialog').addEventListener('cancel',event=>{if(app.recBusy)event.preventDefault()});
+$('recDialog').addEventListener('close',()=>{$('recFields').innerHTML='';$('recDialogError').textContent='';app.recAction=null});
+$('recForm').addEventListener('submit',async event=>{
+  event.preventDefault();if(app.recBusy)return;const action=app.recAction;let path='',payload={confirm:true,relay_password:$('recRelayPassword')?.value||''}, responseType='',uploadFile=null;
+  $('recDialogError').textContent='';
+  try{
+    switch(action){
+      case 'connect':path='/api/recovery/connect';if(!$('recCredentialsMode')||$('recCredentialsMode').value==='new')payload.credentials={phone:$('recPhone').value.trim(),api_id:$('recApiId').value.trim(),api_hash:$('recApiHash').value.trim()};break;
+      case 'export':case 'qr':
+        if($('recBackupPassword').value!==$('recBackupAgain').value)throw new Error('The backup passwords do not match.');
+        path='/api/recovery/export';payload.backup_password=$('recBackupPassword').value;payload.format=action==='qr'?'qr':'file';responseType='blob';break;
+      case 'import':path='/api/recovery/import';payload.backup_password=$('recBackupPassword').value;uploadFile=$('recFile').files[0];break;
+      case 'codes':path='/api/recovery/codes';break;
+      case 'verify':path='/api/recovery/verify';break;
+      case 'phoneRequest':path='/api/recovery/phone/request';payload.phone=$('recNewPhone').value.trim();break;
+      case 'phoneConfirm':path='/api/recovery/phone/confirm';payload.code=$('recPhoneCode').value.trim();payload.acknowledgement=$('recAck').value.trim();if(payload.acknowledgement!=='CHANGE')throw new Error('Type CHANGE exactly to confirm.');break;
+      case 'reminder':path='/api/recovery/reminder';payload.days=Number($('recDays').value);break;
+      case 'revoke':path='/api/recovery/revoke';payload.acknowledgement=$('recAck').value.trim();if(payload.acknowledgement!=='REVOKE')throw new Error('Type REVOKE exactly to confirm.');break;
+      default:return;
+    }
+    app.recBusy=true;const button=$('recSubmit');busy(button,true,action==='import'?'Verifying with Telegram…':'Working…');$('recCancel').disabled=true;
+    try{
+      if(uploadFile)payload.file=await base64File(uploadFile);
+      const result=await api(path,{method:'POST',body:JSON.stringify(payload),responseType});
+      if(action==='export'){downloadBlob(result,'relay-recovery.rlybackup');toast('Encrypted backup downloaded. Store it safely.','ok')}
+      else if(action==='qr'){displayRecoveryQr(result);toast('Encrypted QR backup created. Save it somewhere private.','ok')}
+      else if(action==='codes'){displayRecoveryMessages(result.messages||[]);toast('Official Telegram messages loaded.','ok')}
+      else if(action==='verify')toast('Telegram confirmed the recovery session is authorized.','ok');
+      else if(action==='phoneConfirm')toast(result.warning||'Telegram phone number changed. Update your mirroring configuration if needed.',result.warning?'error':'ok');
+      else if(action==='reminder')toast('Reminder scheduled in Telegram Saved Messages for '+timeString(result.scheduled_for)+'.','ok');
+      else {if(action==='revoke'){clearRecoveryMessages();clearRecoveryQr()}toast(result.message||'Recovery action completed.','ok')}
+      $('recDialog').close();
+    }finally{app.recBusy=false;busy(button,false);$('recCancel').disabled=false;payload.relay_password='';if(payload.backup_password)payload.backup_password='';await refresh();renderRecovery()}
+  }catch(error){$('recDialogError').textContent=error.message;const pw=$('recRelayPassword');if(pw)pw.value=''}
+});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)clearRecoveryMessages()});
+
+
+function authTab(mode){
+  if(mode==='register'&&!app.allowRegistration)return;app.authMode=mode;const login=mode==='login';
+  $('tabLogin').classList.toggle('active',login);$('tabRegister').classList.toggle('active',!login);$('tabLogin').setAttribute('aria-pressed',String(login));$('tabRegister').setAttribute('aria-pressed',String(!login));
+  $('authTitle').textContent=login?'Sign in to your workspace':'Create your workspace';$('authDescription').textContent=login?'Enter your details to pick up where you left off.':'Create a private account workspace. Guest data is not copied.';
+  $('authSubmit').innerHTML=esc(login?'Sign in':'Create account')+' '+icon('arrow');$('password').autocomplete=login?'current-password':'new-password';$('password').minLength=login?0:8;
+  $('passwordHint').textContent=login?'Passwords are case-sensitive.':'Use at least 8 characters. Passwords are case-sensitive.';$('authMsg').textContent='';
+}
+function openAuth(mode='login'){
+  app.ready=false;app.epoch++;$('boot').hidden=true;$('app').hidden=true;$('authScreen').hidden=false;$('authBack').hidden=app.requireLogin;authTab(mode);$('password').value='';setTimeout(()=>$('username').focus(),30);
+}
+function clearWorkspace(){
+  app.status=null;app.config=null;app.events=[];app.recovery=null;app.dirty=false;app.seenChallenge=null;clearRecoveryMessages();clearRecoveryQr();if($('recDialog').open)$('recDialog').close();$('yaml').value='';$('dirtyLabel').textContent='';configMessage('');
+  if($('challengeDialog').open)$('challengeDialog').close();
+}
+$('tabLogin').addEventListener('click',()=>authTab('login'));$('tabRegister').addEventListener('click',()=>authTab('register'));
+async function requestAuth(){
+  if(app.dirty){
+    if(!await askConfirm('Discard unsaved changes?','Signing in opens a separate account workspace. Your unsaved guest configuration will be discarded.','Discard and sign in',true))return;
+    clearWorkspace();
+  }
+  openAuth('login');
+}
+$('authBack').addEventListener('click',()=>init());$('topAuth').addEventListener('click',requestAuth);$('guestSignIn').addEventListener('click',requestAuth);
+$('authForm').addEventListener('submit',async event=>{
+  event.preventDefault();const user=$('username').value.trim(),password=$('password').value;const msg=$('authMsg');msg.textContent='';
+  if(app.authMode==='register'&&!/^[A-Za-z0-9_.-]{3,32}$/.test(user)){msg.textContent='Username must be 3–32 characters: letters, digits, . _ or -.';return}
+  if(app.authMode==='register'&&password.length<8){msg.textContent='Password must be at least 8 characters.';return}
+  const button=$('authSubmit');busy(button,true,'Please wait…');
+  try{const result=await api('/api/auth/'+(app.authMode==='login'?'login':'register'),{method:'POST',body:JSON.stringify({username:user,password})});app.token=result.token;LS.set('tcd_token',result.token);$('password').value='';clearWorkspace();toast('Welcome to your workspace, '+result.identity.username+'.','ok');await init()}
+  catch(error){msg.textContent=error.message}finally{busy(button,false)}
+});
+async function logout(){
+  if(!await askConfirm('Sign out?',(app.dirty?'Unsaved configuration changes will be discarded. ':'')+'Your workspace stays on the server. The recovery session disconnects, but a running mirroring bot continues.','Sign out'))return;
+  try{await api('/api/auth/logout',{method:'POST',body:'{}'});app.token='';LS.del('tcd_token');app.ready=false;app.epoch++;clearWorkspace();toast('Signed out','ok');await init()}
+  catch(error){toast('Could not sign out: '+error.message,'error')}
+}
+$('settingsAuth').addEventListener('click',()=>{if(app.me?.is_guest)requestAuth();else logout()});
+function updateIdentity(me){
+  const guest=me.identity.is_guest,name=guest?'Guest workspace':me.identity.username,initial=guest?'G':(name[0]||'U');
+  $('sideName').textContent=name;$('sideRole').textContent=guest?'This browser only':'Account workspace';$('sideAvatar').textContent=initial;$('topAvatar').textContent=initial;
+  $('settingsName').textContent=name;$('settingsRole').textContent=guest?'Guest workspace · this browser':'Private account workspace';$('settingsAuth').textContent=guest?'Sign in':'Sign out';
+  $('accountActionTitle').textContent=guest?'Account access':'Session';$('accountActionDetail').textContent=guest?'Signing in opens a separate workspace.':'Signing out disconnects recovery but does not stop a running bot.';
+  $('guestBanner').hidden=!guest;$('topAuth').hidden=!guest;renderRecovery();
+}
+async function init(){
+  const epoch=++app.epoch;setConnection('connecting');
+  try{
+    const me=await api('/api/me');if(epoch!==app.epoch)return;app.me=me.identity;app.requireLogin=Boolean(me.require_login);app.allowRegistration=Boolean(me.allow_registration);$('tabRegister').disabled=!app.allowRegistration;
+    if(me.identity.is_guest&&app.token){app.token='';LS.del('tcd_token')}
+    updateIdentity(me);$('boot').hidden=true;
+    if(app.requireLogin&&me.identity.is_guest){openAuth('login');return}
+    $('authScreen').hidden=true;$('app').hidden=false;app.ready=true;showPage(currentPath());await refresh();
+  }catch(error){
+    if(epoch!==app.epoch)return;app.ready=false;$('boot').hidden=false;$('boot').innerHTML='<div class="boot-inner">Could not open workspace. <button class="btn sm" id="retryInit" type="button">Try again</button></div>';$('retryInit').addEventListener('click',init);toast('Connection failed: '+error.message,'error');
+  }
+}
+init();
+</script>
+</body>
+</html>

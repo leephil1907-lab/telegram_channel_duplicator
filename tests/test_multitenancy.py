@@ -339,3 +339,28 @@ def test_container_style_end_to_end(tmp_path):
             proc.wait(timeout=8)
         except subprocess.TimeoutExpired:
             proc.kill()
+
+
+def test_workspace_and_account_storage_are_private_on_disk(tmp_path):
+    if os.name == "nt":
+        pytest.skip("POSIX permission bits do not apply on Windows")
+    import stat
+    manager = WorkspaceManager(str(tmp_path / "private-data"))
+    workspace = manager.workspace(GUEST_A)
+    assert stat.S_IMODE(os.stat(workspace.path).st_mode) == 0o700
+    assert stat.S_IMODE(os.stat(workspace.paths["sessions"]).st_mode) == 0o700
+    assert stat.S_IMODE(os.stat(manager.auth._conn.execute("PRAGMA database_list").fetchone()[2]).st_mode) == 0o600
+    manager.close()
+
+
+def test_container_defaults_to_login_but_allows_explicit_environment_override(monkeypatch):
+    from telegram_channel_duplicator.cli import build_parser
+
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf8")
+    assert "TCD_REQUIRE_LOGIN=1" in dockerfile
+    command = next(line for line in dockerfile.splitlines() if line.startswith("CMD "))
+    assert "--require-login" not in command  # environment remains an actual override
+    monkeypatch.setenv("TCD_REQUIRE_LOGIN", "1")
+    assert build_parser().parse_args(["--serve"]).require_login is True
+    monkeypatch.setenv("TCD_REQUIRE_LOGIN", "0")
+    assert build_parser().parse_args(["--serve"]).require_login is False

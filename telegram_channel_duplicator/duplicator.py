@@ -31,6 +31,8 @@ class Duplicator:
         retry_policy: RetryPolicy = None,
         client=None,
         paths=None,
+        auth_challenge=None,
+        on_ready=None,
     ):
         self.config = config if config is not None else ConfigController.get_config()
         self.store = store
@@ -38,6 +40,7 @@ class Duplicator:
         self.stop_event = stop_event
         self.retry_policy = retry_policy or RetryPolicy()
         self.paths = paths or {}
+        self.on_ready = on_ready
 
         self.groups = None
         self.client = client or Client(
@@ -45,6 +48,7 @@ class Duplicator:
             store=store,
             retry_policy=self._policy(),
             sessions_dir=self.paths.get("sessions"),
+            auth_challenge=auth_challenge,
         )
         self.message_preparer = MessagePreparer(self.config)
         self.sending_message_buffer = SendingMessageBuffer(
@@ -97,45 +101,61 @@ class Duplicator:
         self.groups = await self.client.get_groups()
         if not self.groups:
             logger.error("No resolvable groups found - check the chat titles in config.yaml")
-            self._event("error", "No resolvable groups found", "ERROR")
-            return
+            raise RuntimeError("No resolvable groups found. Check the exact chat titles and account permissions.")
 
         self._event("start", f"Mirroring started: {len(self.groups)} group(s)", "SUCCESS")
+        ready = self._opt("on_ready")
+        if callable(ready):
+            ready()
+        # Poll each source once per cycle, even when it appears in several
+        # groups. A single checkpoint then represents all of its destinations.
+        jobs = {}
+        for group in self.groups:
+            for source in group["sources"]:
+                key = str(source.channel_id())
+                job = jobs.setdefault(key, {"source": source, "groups": []})
+                job["groups"].append(group)
+
         while not self._stopping():
             logger.debug("run cycle")
-            for group in self.groups:
+            for key, job in jobs.items():
                 if self._stopping():
                     break
-                logger.debug(f"process '{group['name']}' group")
-                for source_channel in group["sources"]:
-                    if self._stopping():
-                        break
-                    key = str(source_channel.channel_id())
-                    try:
-                        messages_history = await call_with_retries(
-                            self.client.get_last_messages,
-                            source_channel,
-                            min_id=self._calc_channel_min_id(source_channel),
-                            policy=self._policy(),
-                            on_retry=self._on_retry,
-                        )
-                    except Exception as exc:  # noqa: BLE001
-                        self._bump("failed")
-                        self._event("error", f"Poll failed for {source_channel}: {describe_error(exc)}", "ERROR")
-                        continue
+                source_channel = job["source"]
+                previous_id = source_channel.last_message_id()
+                try:
+                    messages_history = await call_with_retries(
+                        self.client.get_last_messages,
+                        source_channel,
+                        min_id=self._calc_channel_min_id(source_channel),
+                        policy=self._policy(),
+                        on_retry=self._on_retry,
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    self._bump("failed")
+                    self._event("error", f"Poll failed for {source_channel}: {describe_error(exc)}", "ERROR")
+                    continue
 
-                    self._bump("polls")
-                    new_messages = self._filter_old_messages(source_channel, messages_history)
-                    if new_messages:
-                        await self._process_new_messages(group, source_channel, new_messages)
-                    else:
-                        logger.debug(f"new messages in '{source_channel}' not found")
+                self._bump("polls")
+                new_messages = self._filter_old_messages(source_channel, messages_history)
+                delivered = True
+                if new_messages:
+                    for group in job["groups"]:
+                        if not await self._process_new_messages(group, source_channel, new_messages):
+                            delivered = False
+                else:
+                    logger.debug(f"new messages in '{source_channel}' not found")
 
-                    await self._process_edited_messages(messages_history, key)
+                if not delivered:
+                    # Successful copies are recorded individually and skipped
+                    # on retry, while failed copies keep their old checkpoint.
+                    source_channel.set_last_message_id(previous_id)
+                await self._process_edited_messages(messages_history, key)
 
-                    store = self._opt("store")
-                    if store is not None:
-                        store.set_last_id(key, source_channel.last_message_id())
+                store = self._opt("store")
+                # A dry run must never advance the real forwarding checkpoint.
+                if store is not None and not self._opt("dry_run", False):
+                    store.set_last_id(key, source_channel.last_message_id())
 
             await wait_or_stop(self._opt("stop_event"), float(self.config.get("delay", 5)))
         self._event("stop", "Mirroring stopped")
@@ -143,7 +163,7 @@ class Duplicator:
     # ------------------------------------------------------------- processing
     async def _process_new_messages(self, group, source_channel, new_messages):
         if not new_messages:
-            return
+            return True
 
         # Upstream reversed this list inside the destination loop, so with two
         # or more destinations every other channel received messages backwards.
@@ -152,11 +172,15 @@ class Duplicator:
         store = self._opt("store")
         dry_run = self._opt("dry_run", False)
         key = str(source_channel.channel_id())
+        delivered = True
 
         for destination_channel in group["destinations"]:
             if not destination_channel:
                 continue
             for msg in new_messages:
+                if self._stopping():
+                    delivered = False
+                    break
                 if not self.message_preparer.check_whitelist(msg, whitelist):
                     self._bump("filtered")
                     self._event("filtered", f"{source_channel} #{msg.id}: {_preview(msg)} skipped", "DEBUG")
@@ -167,6 +191,14 @@ class Duplicator:
                     self._event("dry-run", f"would send #{msg.id} to {destination_channel}")
                     continue
 
+                # On a partial failure, previously confirmed copies must not
+                # be sent again when the source checkpoint is retried.
+                if store is not None and any(
+                    row["dest_chat_id"] == destination_channel.channel_id()
+                    for row in store.destinations_for(key, msg.id)
+                ):
+                    continue
+
                 try:
                     destination_message = await call_with_retries(
                         self.client.send_message,
@@ -175,18 +207,27 @@ class Duplicator:
                         policy=self._policy(),
                         on_retry=self._on_retry,
                     )
+                    if destination_message is None:
+                        raise RuntimeError("Telegram did not confirm the send")
                 except Exception as exc:  # noqa: BLE001
+                    delivered = False
                     self._bump("failed")
                     self._event("error", f"Send failed for #{msg.id}: {describe_error(exc)}", "ERROR")
-                    continue
+                    # Preserve order for this destination until the failed copy
+                    # has been delivered in a later polling cycle.
+                    break
 
                 self.sending_message_buffer.put(msg, destination_message)
                 if store is not None and destination_message is not None:
                     store.record_send(key, msg.id, destination_channel.channel_id(), destination_message.id)
                 self._bump("mirrored")
                 self._event("sent", f"{source_channel} #{msg.id} → {destination_channel}: {_preview(msg)}", "SUCCESS")
+        return delivered
 
     async def _process_edited_messages(self, messages, source_key=None):
+        # Dry runs must not edit already-mirrored destination messages either.
+        if self._opt("dry_run", False) or self.config.get("edit_message_checker_limit", 10) == 0:
+            return
         store = self._opt("store")
         for msg in messages or []:
             edit_date = getattr(msg, "edit_date", None)
@@ -212,19 +253,26 @@ class Duplicator:
 
             logger.info(f"detected message editing in {msg.chat_id}, text: {_preview(msg)}, copy editing")
             self._event("edited", f"#{msg.id} edited, mirroring to {len(targets)} destination(s)")
+            completed = True
             for (chat_id, message_id), buffered in targets.items():
+                if store is not None and store.is_target_edit_applied(key, msg.id, edit_ts, chat_id, message_id):
+                    continue
                 new_msg = await self._safe_edit(msg, chat_id, message_id)
+                if new_msg is None:
+                    completed = False
+                    continue
                 if buffered is not None:
                     self.sending_message_buffer.remove_by_destination_message(buffered)
                 if store is not None:
                     store.mark_edited(key, msg.id, chat_id, message_id)
+                    store.mark_target_edit_applied(key, msg.id, edit_ts, chat_id, message_id)
                 if new_msg is not None:
                     self.sending_message_buffer.put(msg, new_msg)
                     if store is not None:
                         store.record_send(key, msg.id, chat_id, new_msg.id)
                         store.mark_edited(key, msg.id, chat_id, new_msg.id)
                 self._bump("edited")
-            if store is not None:
+            if store is not None and completed:
                 store.mark_edit_applied(key, msg.id, edit_ts)
 
     async def _safe_edit(self, msg, chat_id, message_id):

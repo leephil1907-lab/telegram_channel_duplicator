@@ -54,7 +54,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--no-registration", action="store_true", default=not _env_flag("TCD_ALLOW_REGISTRATION", True),
                         help="disable new account creation")
     parser.add_argument("--secure-cookies", action="store_true", default=_env_flag("TCD_SECURE_COOKIES"),
-                        help="set Secure; SameSite=None cookies (use behind HTTPS)")
+                        help="set Secure; SameSite=Lax cookies (use behind HTTPS)")
     parser.add_argument("--db", default=os.environ.get("TCD_DB", "state/duplicator.db"), help="SQLite state file (standalone mode)")
     parser.add_argument("--reset-state", action="store_true", help="clear saved positions/counters (standalone mode)")
     return parser

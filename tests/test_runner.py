@@ -93,3 +93,31 @@ def test_runner_reports_config_errors_without_a_thread(tmp_path):
     assert runner.status()["error"]
     assert runner.status()["thread_alive"] is False
     store.close()
+
+
+def test_immediate_stop_before_worker_initialization_does_not_leave_thread_running(tmp_path):
+    import threading
+
+    store = Store(str(tmp_path / "race.db"))
+    runner = BotRunner(str(tmp_path / "unused.yaml"), store, config=VALID_CONFIG, bot_factory=stub_factory)
+    gate = threading.Event()
+    original_run = runner._run
+
+    def delayed_run():
+        gate.wait(timeout=3)
+        original_run()
+
+    runner._run = delayed_run
+    assert runner.start()[0]
+    result = []
+    stopper = threading.Thread(target=lambda: result.append(runner.stop()))
+    stopper.start()
+    deadline = time.time() + 2
+    while time.time() < deadline and runner.status()["state"] != "stopping":
+        time.sleep(0.005)
+    gate.set()
+    stopper.join(timeout=4)
+    assert result and result[0][0]
+    assert runner.status()["state"] == "stopped"
+    assert runner.status()["thread_alive"] is False
+    store.close()

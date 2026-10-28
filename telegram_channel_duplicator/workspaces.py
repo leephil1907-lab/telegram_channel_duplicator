@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Optional
 
 from .auth import Auth
+from .account_recovery import RecoverySession, RecoveryError
 from .runner import BotRunner
 from .store import Store
 
@@ -28,10 +29,15 @@ class Workspace:
     paths: Dict[str, str]
     store: Store
     runner: BotRunner
+    recovery: RecoverySession
     created_at: float = field(default_factory=time.time)
 
     def close(self) -> None:
         self.runner.stop()
+        try:
+            self.recovery.disconnect()
+        except RecoveryError:
+            pass
         self.store.close()
 
 
@@ -47,7 +53,10 @@ class WorkspaceManager:
         self.data_dir = os.path.abspath(data_dir)
         self.dry_run = dry_run
         self.bot_factory = bot_factory
-        os.makedirs(os.path.join(self.data_dir, "workspaces"), exist_ok=True)
+        workspaces_dir = os.path.join(self.data_dir, "workspaces")
+        os.makedirs(workspaces_dir, mode=0o700, exist_ok=True)
+        if os.name != "nt":
+            os.chmod(workspaces_dir, 0o700)
 
         self.auth = Auth(
             os.path.join(self.data_dir, "users.db"), allow_registration=allow_registration
@@ -71,8 +80,13 @@ class WorkspaceManager:
                 "sessions": os.path.join(root, "sessions"),
                 "logs": os.path.join(root, "logs"),
             }
-            for sub in ("sessions", "logs"):
-                os.makedirs(paths[sub], exist_ok=True)
+            # Telegram session files are sensitive even though the web API is
+            # isolated by account. Restrict directory access at the OS level.
+            os.makedirs(root, mode=0o700, exist_ok=True)
+            for directory in (root, paths["sessions"], paths["logs"]):
+                os.makedirs(directory, mode=0o700, exist_ok=True)
+                if os.name != "nt":
+                    os.chmod(directory, 0o700)
             if not os.path.exists(paths["config"]):
                 # Empty on purpose: nothing is pre-approved or pre-configured.
                 with open(paths["config"], "w", encoding="utf8") as f:
@@ -87,7 +101,8 @@ class WorkspaceManager:
                 paths=paths,
                 bot_factory=self.bot_factory,
             )
-            ws = Workspace(key=key, path=root, paths=paths, store=store, runner=runner)
+            recovery = RecoverySession(root, paths["sessions"])
+            ws = Workspace(key=key, path=root, paths=paths, store=store, runner=runner, recovery=recovery)
             self._workspaces[key] = ws
             # Nothing starts automatically.  The owner must explicitly start it.
             return ws

@@ -1,5 +1,7 @@
-include README.md BUILD.md ENHANCEMENTS.md DOCKER.md
+include README.md BUILD.md ENHANCEMENTS.md DOCKER.md REVIEW_AND_DEPLOY.md
 include requirements.txt requirements.legacy.txt
 include build.sh Makefile
-include Dockerfile docker-compose.yml .dockerignore
+include Dockerfile docker-compose.yml render.yaml .dockerignore
 recursive-include tests *.py
+
+include telegram_channel_duplicator/dashboard.html

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "telegram-channel-duplicator"
-version = "0.6.0"
-description = "Python/Telethon client-bot for mirroring Telegram channels, groups and private chats"
+version = "0.8.1"
+description = "Telegram channel mirroring and account recovery with encrypted session backups"
 readme = "README.md"
 requires-python = ">=3.9"
 # Upstream does not declare a license; see BUILD.md before redistributing.
@@ -24,6 +24,10 @@ dependencies = [
     "python-dotenv>=1.0",
     "pytz>=2024.1",
     "Telethon>=1.34,<2",
+    "cryptography>=42",
+    "Pillow>=10",
+    "qrcode>=7.4,<9",
+    "zxing-cpp>=2.2,<4",
 ]
 
 [project.optional-dependencies]
@@ -38,6 +42,9 @@ Upstream = "https://github.com/deFiss/telegram_channel_duplicator"
 
 [tool.setuptools]
 packages = ["telegram_channel_duplicator"]
+
+[tool.setuptools.package-data]
+telegram_channel_duplicator = ["dashboard.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

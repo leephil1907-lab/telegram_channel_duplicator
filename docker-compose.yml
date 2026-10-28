@@ -1,7 +1,7 @@
 services:
   duplicator:
     build: .
-    image: telegram-channel-duplicator:0.4.0
+    image: telegram-channel-duplicator:0.8.1
     container_name: telegram-channel-duplicator
     restart: unless-stopped
     ports:
@@ -11,7 +11,7 @@ services:
       # Each account is fully isolated; guests must sign in.
       TCD_REQUIRE_LOGIN: "${TCD_REQUIRE_LOGIN:-1}"
       TCD_ALLOW_REGISTRATION: "${TCD_ALLOW_REGISTRATION:-1}"
-      # Set to 1 when served over HTTPS (Secure; SameSite=None cookies).
+      # Set to 1 when served over HTTPS (Secure; SameSite=Lax cookies).
       TCD_SECURE_COOKIES: "${TCD_SECURE_COOKIES:-0}"
       # Optional extra shared secret; open /?token=... if set.
       TCD_TOKEN: "${TCD_TOKEN:-}"

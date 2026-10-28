@@ -1,4 +1,64 @@
-# Architecture & change history (v0.6.0)
+# Architecture & change history
+
+## v0.8.1 — Telegram phone/code and conditional two-step login
+
+- Both hosted mirroring and recovery request a code through the real Telethon client,
+  show Telegram's returned delivery type and length when available, and request the
+  Telegram two-step password only after Telegram requires it. A failed or unsupported
+  send does not open a fabricated code prompt. Recovery resends are confirmed, serialized,
+  rate-limited and update both the code hash and challenge deadline.
+- Email login uses Telegram's `auth.signIn.email_verification` field; regular phone/app
+  codes use Telethon's normal `sign_in`. Unsupported email setup, Firebase SMS and paid
+  verification explain the official-app/support limitation. Codes, private hashes, API
+  secrets and passwords are never included in challenge status.
+- Per-phone mirroring session files prevent cross-number reuse while preserving a matching
+  legacy session. A server-confirmed account mismatch fails closed. Worker readiness is
+  reported only after successful authentication and chat-title resolution.
+- Actual Telethon 1.34 and 1.45 authentication methods were exercised with simulated RPC
+  boundaries, including retries, resend, expiry, email and two-step; desktop/mobile
+  browser workflows were also tested. No live Telegram account was available.
+
+## v0.8.0 — separate Telegram recovery workspace
+
+- A dedicated per-account Telethon session supports user-authorized login and two-step
+  challenges, encrypted file/QR session backups, Telegram-verified restoration, live
+  session verification, official service messages, verified phone changes, a scheduled
+  Saved Messages reminder, disconnect and explicit revocation. The mirroring session
+  remains separate. No recovery activity starts automatically or uses guest accounts.
+- Recovery operations require explicit confirmation and workspace-password reauthentication
+  where sensitive. Attempt limiting is process-local; use proxy-level controls as well.
+  Codes, passwords and service-message bodies are not written to activity logs. Recovery
+  credentials and the active Telegram session remain sensitive **unencrypted server files**.
+- Portable Relay backups use AES-256-GCM and scrypt, with bounded QR decoding and no
+  pickle. Unsafe legacy `.tgback` imports are deliberately unsupported. Restore fetches
+  Telegram's current data-center options before using an uploaded session key rather
+  than connecting to an untrusted address embedded in a backup.
+- The recovery center has responsive UI, prominent risk warnings, one-minute message
+  clearing, short-lived QR display and no fabricated account data. Offline tests use
+  test clients; actual Telegram and phone changes still need an owned account to verify.
+
+## v0.7.0 — routed workspace and hosted-login update
+
+- Six distinct, reloadable application routes share the existing authenticated backend;
+  browser history, old hash links, responsive navigation and reduced-motion preferences
+  are supported. The HTML, styles and scripts remain self-contained and are included in
+  the Python package.
+- First-time hosted Telegram sign-in uses per-workspace, short-lived in-memory code/2FA
+  challenges. The standalone CLI retains terminal input; secrets are not returned by
+  the challenge status endpoint or written to activity events.
+- Dry runs cannot send or edit messages or advance the saved forwarding checkpoint.
+  Failed sends retain the checkpoint and retry; confirmed destination copies are skipped.
+  Sources shared by several groups are polled together. Failed edits are retried per
+  destination. Missing or ambiguous chat titles stop startup instead of selecting or
+  silently skipping a chat. These changes reduce duplicates but cannot guarantee
+  exactly-once Telegram delivery.
+- Stopping is safe even if requested during worker startup; state reset is rejected until
+  the worker stops. Reset retains event history. Config validation understands redacted
+  credentials, and config writes are atomic.
+- The UI defaults to a dry run but never starts automatically. The API requires callers
+  to explicitly choose a boolean `dry_run` value when requesting a confirmed start.
+
+The sections below describe earlier releases and their design at the time.
 
 ## v0.6.0 — visual redesign
 
@@ -95,23 +155,25 @@ history, reversed send order, media-only posts, config mutation, empty buffer).
 | `/api/config` | GET | redacted config + validation result |
 | `/api/config` | POST | `{"confirm":true,"yaml":"…"}` — save private config |
 | `/api/config/validate` | POST | `{"yaml":"…"}` — validate without saving |
-| `/api/start` | POST | `{"confirm":true,"dry_run":bool}` |
+| `/api/start` | POST | `{"confirm":true,"dry_run":bool}` (both values required) |
+| `/api/telegram/challenge` | POST | Confirm and submit the matching pending mirroring challenge ID and code/password |
+| `/api/recovery/status` | GET | Signed-in account's recovery state and non-secret challenge metadata |
+| `/api/recovery/connect`, `/disconnect` | POST | Confirmed recovery connect/disconnect; connect requires Relay reauthentication |
+| `/api/recovery/challenge`, `/resend` | POST | Confirm and submit or resend the matching recovery challenge ID |
+| `/api/recovery/verify`, `/export`, `/import`, `/codes` | POST | Reauthenticated session verification, backups and official messages |
+| `/api/recovery/phone/request`, `/phone/confirm`, `/reminder`, `/revoke` | POST | Reauthenticated sensitive account operations |
 | `/api/stop`, `/api/reset` | POST | `{"confirm":true}` |
 
 Optional shared secret `--token` / `TCD_TOKEN` (send `X-Token` header or `?token=`).
 
 ## Verification
 
-```
-./build.sh
-==> 54 passed
-==> BUILD OK
-   artifacts/telegram_channel_duplicator-0.6.0-py3-none-any.whl
-   artifacts/telegram_channel_duplicator-0.6.0.tar.gz
+```sh
+python -m pytest
+python -m build --outdir artifacts
 ```
 
-`tests/test_multitenancy.py::test_no_demo_simulation_or_sample_artifacts` asserts the
-removed files are gone, `--demo` is rejected by the CLI, the dashboard HTML contains no demo
-controls, and `telegram_channel_duplicator.simulator` no longer imports.
-`tests/test_dashboard.py::test_actions_require_explicit_confirmation` proves no
-state-changing endpoint acts without `confirm: true`.
+The test suite includes private workspaces, confirmed actions, routed HTML, browser-facing
+Telegram challenges, dry-run safety, partial send/edit retries, redacted YAML and worker
+start/stop behavior. The live Telegram service is not exercised by the automated tests;
+see [REVIEW_AND_DEPLOY.md](REVIEW_AND_DEPLOY.md) for deployment checks and limitations.

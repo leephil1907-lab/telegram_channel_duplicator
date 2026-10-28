@@ -3,12 +3,13 @@ FROM python:3.12-slim
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     TCD_DATA_DIR=/app/data \
-    TCD_DB=/app/data/state.db
+    TCD_DB=/app/data/state.db \
+    TCD_REQUIRE_LOGIN=1
 
 WORKDIR /app
 
 # Install dependencies first so source edits don't reinstall packages.
-COPY requirements.txt pyproject.toml README.md BUILD.md ENHANCEMENTS.md DOCKER.md MANIFEST.in ./
+COPY requirements.txt pyproject.toml README.md BUILD.md ENHANCEMENTS.md DOCKER.md REVIEW_AND_DEPLOY.md MANIFEST.in ./
 COPY telegram_channel_duplicator ./telegram_channel_duplicator
 RUN pip install --no-cache-dir . \
  && python -m pip check \
@@ -24,4 +25,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
 
 # Multi-user server: every account gets an isolated workspace.
 # Set TCD_SECURE_COOKIES=1 behind HTTPS, and TCD_TOKEN for an extra shared secret.
-CMD ["sh", "-c", "telegram-channel-duplicator --serve --host 0.0.0.0 --port \"${PORT:-8000}\" --data-dir \"${TCD_DATA_DIR:-/app/data}\" --require-login"]
+CMD ["sh", "-c", "telegram-channel-duplicator --serve --host 0.0.0.0 --port \"${PORT:-8000}\" --data-dir \"${TCD_DATA_DIR:-/app/data}\""]

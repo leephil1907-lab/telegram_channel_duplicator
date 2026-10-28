@@ -47,6 +47,14 @@ CREATE TABLE IF NOT EXISTS applied_edits (
     edit_ts           TEXT NOT NULL,
     PRIMARY KEY (source_key, source_message_id, edit_ts)
 );
+CREATE TABLE IF NOT EXISTS applied_edit_targets (
+    source_key        TEXT NOT NULL,
+    source_message_id INTEGER NOT NULL,
+    edit_ts           TEXT NOT NULL,
+    dest_chat_id      INTEGER NOT NULL,
+    dest_message_id   INTEGER NOT NULL,
+    PRIMARY KEY (source_key, source_message_id, edit_ts, dest_chat_id, dest_message_id)
+);
 """
 
 COUNTERS = ("polls", "mirrored", "filtered", "edited", "failed", "retries")
@@ -209,6 +217,24 @@ class Store:
             )
             self._conn.commit()
 
+    def is_target_edit_applied(self, source_key, source_message_id, edit_ts, dest_chat_id, dest_message_id):
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT 1 FROM applied_edit_targets WHERE source_key = ? AND source_message_id = ? "
+                "AND edit_ts = ? AND dest_chat_id = ? AND dest_message_id = ?",
+                (source_key, source_message_id, edit_ts, dest_chat_id, dest_message_id),
+            ).fetchone()
+        return row is not None
+
+    def mark_target_edit_applied(self, source_key, source_message_id, edit_ts, dest_chat_id, dest_message_id):
+        with self._lock:
+            self._conn.execute(
+                "INSERT OR IGNORE INTO applied_edit_targets "
+                "(source_key, source_message_id, edit_ts, dest_chat_id, dest_message_id) VALUES (?, ?, ?, ?, ?)",
+                (source_key, source_message_id, edit_ts, dest_chat_id, dest_message_id),
+            )
+            self._conn.commit()
+
     # ------------------------------------------------------------------ admin
     def reset(self) -> None:
         """Forget positions/counters/mappings but keep the event history."""
@@ -216,6 +242,7 @@ class Store:
             self._conn.execute("DELETE FROM source_state")
             self._conn.execute("DELETE FROM message_map")
             self._conn.execute("DELETE FROM applied_edits")
+            self._conn.execute("DELETE FROM applied_edit_targets")
             self._conn.execute("UPDATE counters SET value = 0")
             self._conn.commit()
         self.event("system", "State reset: positions, counters and message map cleared", "WARNING")

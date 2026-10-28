@@ -1,4 +1,4 @@
-# Build notes — telegram_channel_duplicator (v0.6.0)
+# Build notes — telegram_channel_duplicator (v0.8.1)
 
 Imported from **https://github.com/leephil1907-lab/telegram_channel_duplicator**
 (a fork of [deFiss/telegram_channel_duplicator](https://github.com/deFiss/telegram_channel_duplicator)),
@@ -37,12 +37,15 @@ Entry points: `python main.py`, `python -m telegram_channel_duplicator`, or the 
 | 4 | `python -m build --outdir artifacts` → sdist + wheel |
 | 5 | Install the wheel into a clean temp target and verify imports, `--version` and `--check` using an **ephemeral** config fixture (not shipped) |
 
-Artifacts: `artifacts/telegram_channel_duplicator-0.6.0-py3-none-any.whl` and `.tar.gz`.
+Artifacts: `artifacts/telegram_channel_duplicator-0.8.1-py3-none-any.whl` and `.tar.gz`.
 `.venv`, `build/`, `*.egg-info`, `data/`, `state/`, `sessions/` and `logs/` are regenerable
 and git-ignored.
 
-Verified here: **Python 3.13.16, 54 offline tests passing**, wheel installed and CLI verified.
-CI also covers Python 3.9/3.11/3.13 and builds the Docker image.
+Verified here: Python 3.13, offline tests for recovery cryptography, QR, API security,
+Telegram send/resend/code/two-step and responsive browser workflows. Both Telethon 1.34
+and 1.45 authentication methods were tested at a simulated RPC boundary. No live Telegram
+account was available; Docker and Render were not run. See `REVIEW_AND_DEPLOY.md` for the
+current results. CI is configured for Python 3.10/3.11/3.13 and Docker smoke tests.
 
 ## 4. Dependencies
 
@@ -50,6 +53,9 @@ Upstream pinned 2020-era versions; `PyYAML==6.0` cannot build on Python 3.13
 (`'build_ext' object has no attribute 'cython_sources'`). `requirements.legacy.txt` keeps
 those pins for reference; `requirements.txt` / `pyproject.toml` use compatible lower bounds.
 Telethon brings `pyaes`, `rsa`, `pyasn1`; loguru brings `win32-setctime` on Windows only.
+Recovery additionally uses `cryptography` (scrypt/AES-GCM), `qrcode`, `Pillow`, and
+`zxing-cpp` (bounded QR decoding). They are declared in both package metadata and
+`requirements.txt`.
 
 ## 5. Configuration
 
@@ -75,15 +81,21 @@ groups:
 - Secret lines are redacted in the dashboard; saving keeps existing hidden values unless you
   replace them. A config can be saved with unresolved env placeholders (validated
   structurally) but startup validation stays strict.
-- First real run prompts for the login code / 2FA and writes a session file inside that
-  user's private `sessions/` directory.
+- A hosted first run requests a real Telegram code and prompts for Telegram's two-step
+  password only if required. Telegram selects code delivery; SMS is not guaranteed.
+  Recovery can request a resend after a cooldown. A matching authorized session can skip
+  sign-in. The terminal CLI still uses terminal prompts. See the README for unsupported
+  Telegram verification types and manual checks.
+- Session files are private but unencrypted. Mirroring sessions are keyed by configured
+  phone number and verified against Telegram; a compatible legacy session is reused.
+  Submit credentials only on an HTTPS-protected server you trust.
 
 ## 6. Multi-user and explicit approval
 
 `auth.py` + `workspaces.py` + `dashboard.py` implement:
 
 - Salted PBKDF2 password hashes, opaque tokens stored as SHA-256 digests, 30-day expiry,
-  `HttpOnly` cookies; optional `Secure; SameSite=None` for HTTPS.
+  `HttpOnly` cookies; optional `Secure; SameSite=Lax` for HTTPS.
 - Per-account **and** per-anonymous-browser workspaces (`X-Guest-Key` header works even when
   third-party cookies are blocked). Each has its own empty config, SQLite store, Telegram
   session directory, log routing and bot thread.
@@ -91,7 +103,8 @@ groups:
 - **No pre-approved actions**: no auto-start, no auto-claim, no template provisioning.
   `POST /api/start`, `/api/stop`, `/api/reset` and `/api/config` return 400 unless the body
   contains `confirm: true`; the UI also shows a native confirmation dialog.
-- `--dry-run` (or the dry-run checkbox) polls without sending — an explicit user choice.
+- `--dry-run` (or the dashboard checkbox, selected by default) polls without sending or
+  editing and without advancing live checkpoints. Starting still requires confirmation.
 
 See [ENHANCEMENTS.md](ENHANCEMENTS.md) for the API table and
 [DOCKER.md](DOCKER.md) for deployment.
@@ -120,7 +133,9 @@ config mutation, empty-deque buffer crash, per-user session/log routing, safe lo
 
 ## 9. Limitations
 
-- Polling uses `GetHistoryRequest(limit=10)`; large bursts between polls can be missed.
+- After a source checkpoint exists, polling paginates newer messages; Telegram access,
+  rate limits and network interruptions can still affect delivery. Exactly-once delivery
+  is not guaranteed.
 - Chats are matched by exact display title; renames break them.
 - A fresh state establishes a baseline on the first cycle; old messages aren't backfilled.
 - Single-container SQLite design; see DOCKER.md for scaling notes.

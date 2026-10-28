@@ -32,6 +32,8 @@ MODULES = [
     "telegram_channel_duplicator.resilience",
     "telegram_channel_duplicator.runner",
     "telegram_channel_duplicator.dashboard",
+    "telegram_channel_duplicator.account_recovery",
+    "telegram_channel_duplicator.recovery_backup",
 ]
 
 

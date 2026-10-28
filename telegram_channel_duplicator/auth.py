@@ -18,6 +18,8 @@ from dataclasses import dataclass
 from typing import Optional
 
 PBKDF2_ROUNDS = 210_000
+AUTH_ATTEMPTS = 5
+AUTH_WINDOW_SECONDS = 15 * 60
 TOKEN_TTL_SECONDS = 30 * 24 * 3600
 USERNAME_RE = re.compile(r"^[A-Za-z0-9_.-]{3,32}$")
 GUEST_RE = re.compile(r"^g_[0-9a-f]{32}$")
@@ -55,7 +57,11 @@ class Auth:
         self.allow_registration = allow_registration
         self.token_ttl = token_ttl
         self._lock = threading.RLock()
+        # Process-local protection; deployments also need proxy-level limits.
+        self._attempts = {}
         self._conn = sqlite3.connect(db_path, check_same_thread=False, timeout=15)
+        if os.name != "nt" and db_path != ":memory:":
+            os.chmod(db_path, 0o600)
         self._conn.row_factory = sqlite3.Row
         with self._lock:
             self._conn.executescript(
@@ -84,8 +90,8 @@ class Auth:
         username = (username or "").strip()
         if not USERNAME_RE.match(username):
             raise AuthError("Username must be 3-32 characters: letters, digits, . _ -")
-        if not password or len(password) < 8:
-            raise AuthError("Password must be at least 8 characters")
+        if not password or not 8 <= len(password) <= 1024:
+            raise AuthError("Password must be at least 8 characters and no more than 1024 characters")
 
         user_id = "u_" + secrets.token_hex(16)
         salt = secrets.token_hex(16)
@@ -104,19 +110,41 @@ class Auth:
                 raise AuthError("That username is already taken") from exc
         return Identity(key="w_" + user_id[2:], username=username, is_guest=False)
 
-    def login(self, username: str, password: str) -> tuple[str, Identity]:
+    def _check_credentials(self, username: str, password: str):
+        username = (username or "").strip()
+        if not USERNAME_RE.fullmatch(username):
+            raise AuthError("Invalid username or password")
+        if not isinstance(password, str) or len(password) > 1024:
+            raise AuthError("Invalid username or password")
+        now = time.monotonic()
         with self._lock:
-            row = self._conn.execute(
-                "SELECT * FROM users WHERE username = ?", ((username or "").strip(),)
-            ).fetchone()
-        if row is None:
+            # Count in-flight attempts too, so concurrent guesses cannot race
+            # the limit. Expired entries are pruned without persisting secrets.
+            self._attempts = {k: [t for t in v if now - t < AUTH_WINDOW_SECONDS]
+                              for k, v in self._attempts.items()}
+            self._attempts = {k: v for k, v in self._attempts.items() if v}
+            attempts = self._attempts.get(username, [])
+            if len(attempts) >= AUTH_ATTEMPTS:
+                raise AuthError("Too many password attempts. Try again in 15 minutes.")
+            if len(self._attempts) >= 4096 and username not in self._attempts:
+                raise AuthError("Too many password attempts. Try again later.")
+            self._attempts.setdefault(username, []).append(now)
+            row = self._conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+        # Perform the same PBKDF2 work for unknown users.
+        salt = bytes.fromhex(row["salt"]) if row else bytes(16)
+        candidate = hashlib.pbkdf2_hmac("sha256", (password or "").encode("utf8"), salt, PBKDF2_ROUNDS).hex()
+        if row is None or not hmac.compare_digest(candidate, row["password_hash"]):
             raise AuthError("Invalid username or password")
-        candidate = hashlib.pbkdf2_hmac(
-            "sha256", (password or "").encode("utf8"), bytes.fromhex(row["salt"]), PBKDF2_ROUNDS
-        ).hex()
-        if not hmac.compare_digest(candidate, row["password_hash"]):
-            raise AuthError("Invalid username or password")
+        with self._lock:
+            self._attempts.pop(username, None)
+        return row
 
+    def verify_password(self, username: str, password: str) -> None:
+        """Reauthenticate before actions that expose or modify Telegram access."""
+        self._check_credentials(username, password)
+
+    def login(self, username: str, password: str) -> tuple[str, Identity]:
+        row = self._check_credentials(username, password)
         token = secrets.token_urlsafe(32)
         with self._lock:
             self._conn.execute(
