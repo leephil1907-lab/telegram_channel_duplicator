@@ -352,9 +352,10 @@ footer{color:var(--muted);font-size:11px;padding-top:8px;border-top:1px solid va
   <div class="modal">
     <h3 id="authTitle">Sign in</h3><p id="authSub">Welcome back to your workspace.</p>
     <div class="tabs"><button id="tabLogin" class="on" onclick="authTab('login')">Sign in</button><button id="tabReg" onclick="authTab('register')">Create account</button></div>
-    <input id="username" placeholder="Username" autocomplete="username">
-    <input id="password" type="password" placeholder="Password (min 8 characters)" autocomplete="current-password">
-    <div class="msg" id="authMsg"></div>
+    <input id="username" placeholder="Username (3–32 characters)" autocomplete="username" minlength="3" maxlength="32" required>
+    <input id="password" type="password" placeholder="Password (at least 8 characters)" autocomplete="current-password" minlength="8" required>
+    <div class="hint" id="passwordHint" style="margin-top:6px">Use at least 8 characters. Passwords are case-sensitive.</div>
+    <div class="msg" id="authMsg" role="alert" aria-live="polite"></div>
     <div class="row" style="margin-top:14px"><button class="btn primary" id="authSubmit" onclick="submitAuth()">Sign in</button><button class="btn subtle" onclick="closeAuth()">Cancel</button></div>
   </div>
 </div>
@@ -459,9 +460,26 @@ function authTab(mode){ state.authMode=mode; const login=mode==='login';
   document.getElementById('authSub').textContent=login?'Welcome back to your private workspace.':'Your own isolated config, state and Telegram session.';
   document.getElementById('authSubmit').textContent=login?'Sign in':'Create account';
   document.getElementById('password').autocomplete=login?'current-password':'new-password';
+  document.getElementById('password').minLength=login?0:8;
+  document.getElementById('passwordHint').textContent=login?'Enter the password you used when creating your account.':'Use at least 8 characters. Passwords are case-sensitive.';
   document.getElementById('authMsg').textContent=''; }
+document.getElementById('password').addEventListener('input',()=>{
+  const p=document.getElementById('password').value;
+  const login=state.authMode==='login';
+  document.getElementById('passwordHint').textContent=login?'Enter the password you used when creating your account.':(p.length<8?'Password needs '+(8-p.length)+' more character'+(8-p.length===1?'':'s')+'.':'Password length looks good.');
+});
+document.getElementById('password').addEventListener('keydown',e=>{if(e.key==='Enter')submitAuth();});
+document.getElementById('username').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('password').focus();});
 async function submitAuth(){ const u=document.getElementById('username').value,p=document.getElementById('password').value;
-  const btn=document.getElementById('authSubmit'); busy(btn,true,'Please wait');
+  const btn=document.getElementById('authSubmit');
+  const msg=document.getElementById('authMsg');
+  msg.textContent=''; msg.className='msg';
+  if(state.authMode==='register' && p.length<8){
+    msg.className='msg err'; msg.textContent='Password must be at least 8 characters. You entered '+p.length+'.';
+    document.getElementById('password').focus(); return;
+  }
+  if(!u.trim()){msg.className='msg err';msg.textContent='Enter a username.';document.getElementById('username').focus();return;}
+  busy(btn,true,'Please wait');
   try{ const r=await api('/api/auth/'+(state.authMode==='login'?'login':'register'),{method:'POST',body:JSON.stringify({username:u,password:p})});
     state.token=r.token; LS.set('tcd_token',r.token); state.me=r.identity; closeAuth();
     document.getElementById('gate').classList.add('hidden'); document.getElementById('app').classList.remove('hidden');
