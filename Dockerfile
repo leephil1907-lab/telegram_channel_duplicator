@@ -20,10 +20,8 @@ VOLUME ["/app/data"]
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD python -c "import urllib.request,sys; r=urllib.request.urlopen('http://127.0.0.1:8000/api/health',timeout=3); sys.exit(0 if r.status==200 else 1)"
+  CMD python -c "import os,urllib.request,sys; p=os.environ.get('PORT','8000'); r=urllib.request.urlopen(f'http://127.0.0.1:{p}/api/health',timeout=3); sys.exit(0 if r.status==200 else 1)"
 
 # Multi-user server: every account gets an isolated workspace.
 # Set TCD_SECURE_COOKIES=1 behind HTTPS, and TCD_TOKEN for an extra shared secret.
-CMD ["telegram-channel-duplicator", "--serve", \
-     "--host", "0.0.0.0", "--port", "8000", \
-     "--data-dir", "/app/data", "--require-login"]
+CMD ["sh", "-c", "telegram-channel-duplicator --serve --host 0.0.0.0 --port \"${PORT:-8000}\" --data-dir \"${TCD_DATA_DIR:-/app/data}\" --require-login"]

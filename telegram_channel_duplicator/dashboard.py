@@ -28,6 +28,32 @@ PAGE = r"""<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Relay — Channel Duplicator</title>
 <style>
+/* TeleBridge visual system: premium charcoal, moss and lime */
+:root{
+  --bg:#101510;--surface:#171E18;--surface2:#202820;--ink:#F4F5ED;--muted:#A0AA9A;
+  --line:#303B2E;--accent:#D6F269;--accent2:#2A3524;--on-accent:#151A12;
+  --ok:#B9D86B;--warn:#E5BD72;--err:#F08E82;
+  --shadow:0 1px 2px rgba(0,0,0,.12),0 12px 32px rgba(0,0,0,.18);
+  --r:14px;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;--serif:Georgia,'Times New Roman',serif;
+}
+body[data-theme='ocean'],body[data-theme='slate'],body[data-theme='ember']{
+  --bg:#101510;--surface:#171E18;--surface2:#202820;--ink:#F4F5ED;--muted:#A0AA9A;
+  --line:#303B2E;--accent:#D6F269;--accent2:#2A3524;--on-accent:#151A12;
+  --ok:#B9D86B;--warn:#E5BD72;--err:#F08E82;--shadow:0 1px 2px rgba(0,0,0,.12),0 12px 32px rgba(0,0,0,.18);
+}
+html{scroll-behavior:smooth}
+body{animation:tb-enter .38s ease-out both}
+@keyframes tb-enter{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+button,a,input,textarea,select,.card,.panel,.stat,.route{transition:background-color .2s ease,border-color .2s ease,color .2s ease,box-shadow .2s ease,transform .2s ease,opacity .2s ease}
+button:not(:disabled):hover{transform:translateY(-1px)}
+button:disabled{cursor:wait;opacity:.62}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.loading,.loading *{cursor:progress}
+.skeleton{position:relative;overflow:hidden;background:var(--surface2);border-radius:8px;min-height:12px;color:transparent}
+.skeleton:after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:rgba(255,255,255,.07);animation:tb-shimmer 1.35s ease-in-out infinite}
+@keyframes tb-shimmer{0%,100%{opacity:.25}50%{opacity:.85}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 :root{
@@ -214,6 +240,7 @@ footer{color:var(--muted);font-size:11px;padding-top:8px;border-top:1px solid va
       <a class="nav" href="#groups" onclick="navTo(this,'Channels')"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>Channels</a>
       <a class="nav" href="#config" onclick="navTo(this,'Configuration')"><svg viewBox="0 0 24 24"><path d="M8 4h8l4 4v12H4V4h4z"/><path d="M8 12h8M8 16h5"/></svg>Configuration</a>
       <a class="nav" href="#activity" onclick="navTo(this,'Activity')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Activity</a>
+      <a class="nav" href="#recovery" onclick="navTo(this,'Recovery guide')"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v5c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>Recovery guide</a>
     </nav>
     <div class="side-foot">
       <div class="side-label">Appearance</div>
@@ -292,6 +319,30 @@ footer{color:var(--muted);font-size:11px;padding-top:8px;border-top:1px solid va
           </section>
         </div>
       </div>
+
+      <section class="panel" id="recovery" style="margin-top:18px">
+        <div class="panel-head"><h2>Telegram account recovery</h2><span class="panel-meta">SAFETY GUIDE</span></div>
+        <p class="muted" style="font-size:13px;line-height:1.7;max-width:850px">Use these official channels if you lose access to your Telegram account. Recovery depends on access to your phone number, existing logged-in sessions, and Telegram’s security checks. This guide cannot unlock accounts or bypass authentication.</p>
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:14px">
+          <div class="panel" style="box-shadow:none">
+            <h3 style="margin-top:0">1. Check existing sessions</h3>
+            <p class="muted" style="font-size:12px;line-height:1.7">If Telegram is still open on another trusted device, keep that session active while reviewing the official account and device settings.</p>
+          </div>
+          <div class="panel" style="box-shadow:none">
+            <h3 style="margin-top:0">2. Restore phone access</h3>
+            <p class="muted" style="font-size:12px;line-height:1.7">If you no longer control the number, contact your mobile carrier about restoring the SIM or number before attempting sign-in again.</p>
+          </div>
+          <div class="panel" style="box-shadow:none">
+            <h3 style="margin-top:0">3. Contact Telegram</h3>
+            <p class="muted" style="font-size:12px;line-height:1.7">Use Telegram’s official support form for account-access issues and follow the instructions shown in the app.</p>
+          </div>
+        </div>
+        <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:14px">
+          <a class="btn primary" href="https://telegram.org/faq" target="_blank" rel="noopener noreferrer">Official Telegram FAQ ↗</a>
+          <a class="btn subtle" href="https://telegram.org/support" target="_blank" rel="noopener noreferrer">Telegram Support ↗</a>
+        </div>
+        <p class="hint" style="margin-top:14px">Security reminder: never share Telegram login codes, two-step verification passwords, API hashes, QR sign-in codes, or session files. Support staff and this dashboard do not need your login code. Avoid third-party account-recovery services that promise guaranteed access.</p>
+      </section>
       <footer>Relay · local control panel · isolated per user · credentials are never rendered · respect Telegram's Terms of Service</footer>
     </div>
   </div>

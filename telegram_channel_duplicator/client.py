@@ -12,7 +12,6 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 from telethon import TelegramClient
-from telethon.tl.functions.messages import GetHistoryRequest
 
 from .destination_channel import DestinationChannel
 from .resilience import RetryPolicy, call_with_retries
@@ -62,19 +61,26 @@ class Client:
         await self.client.disconnect()
 
     async def get_last_messages(self, channel, min_id):
-        history = await self.client(
-            GetHistoryRequest(
-                peer=channel.channel_id(),
-                offset_id=0,
-                offset_date=None,
-                add_offset=0,
-                limit=10,
-                max_id=0,
-                min_id=min_id,
-                hash=0,
-            )
-        )
-        return history.messages[::-1]
+        """Return new messages oldest-to-newest, using Telethon pagination.
+
+        On a source's first run, read only its latest message so existing
+        history is not downloaded or forwarded. Once a checkpoint exists,
+        iterate every message newer than the requested lower bound.
+        """
+        if channel.last_message_id() == 0:
+            async for message in self.client.iter_messages(
+                channel.channel_id(), limit=1
+            ):
+                return [message]
+            return []
+
+        messages = []
+        async for message in self.client.iter_messages(
+            channel.channel_id(), min_id=max(0, int(min_id))
+        ):
+            messages.append(message)
+        messages.sort(key=lambda message: message.id)
+        return messages
 
     async def send_message(self, *args, **kwargs):
         return await self.client.send_message(*args, **kwargs)
