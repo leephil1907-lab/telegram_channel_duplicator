@@ -240,6 +240,7 @@ footer{color:var(--muted);font-size:11px;padding-top:8px;border-top:1px solid va
       <a class="nav" href="#groups" onclick="navTo(this,'Channels')"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>Channels</a>
       <a class="nav" href="#config" onclick="navTo(this,'Configuration')"><svg viewBox="0 0 24 24"><path d="M8 4h8l4 4v12H4V4h4z"/><path d="M8 12h8M8 16h5"/></svg>Configuration</a>
       <a class="nav" href="#activity" onclick="navTo(this,'Activity')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Activity</a>
+      <a class="nav" href="#recovery" onclick="navTo(this,'Recovery guide')"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v5c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>Recovery guide</a>
     </nav>
     <div class="side-foot">
       <div class="side-label">Appearance</div>
@@ -318,6 +319,30 @@ footer{color:var(--muted);font-size:11px;padding-top:8px;border-top:1px solid va
           </section>
         </div>
       </div>
+
+      <section class="panel" id="recovery" style="margin-top:18px">
+        <div class="panel-head"><h2>Telegram account recovery</h2><span class="panel-meta">SAFETY GUIDE</span></div>
+        <p class="muted" style="font-size:13px;line-height:1.7;max-width:850px">Use these official channels if you lose access to your Telegram account. Recovery depends on access to your phone number, existing logged-in sessions, and Telegram’s security checks. This guide cannot unlock accounts or bypass authentication.</p>
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:14px">
+          <div class="panel" style="box-shadow:none">
+            <h3 style="margin-top:0">1. Check existing sessions</h3>
+            <p class="muted" style="font-size:12px;line-height:1.7">If Telegram is still open on another trusted device, keep that session active while reviewing the official account and device settings.</p>
+          </div>
+          <div class="panel" style="box-shadow:none">
+            <h3 style="margin-top:0">2. Restore phone access</h3>
+            <p class="muted" style="font-size:12px;line-height:1.7">If you no longer control the number, contact your mobile carrier about restoring the SIM or number before attempting sign-in again.</p>
+          </div>
+          <div class="panel" style="box-shadow:none">
+            <h3 style="margin-top:0">3. Contact Telegram</h3>
+            <p class="muted" style="font-size:12px;line-height:1.7">Use Telegram’s official support form for account-access issues and follow the instructions shown in the app.</p>
+          </div>
+        </div>
+        <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:14px">
+          <a class="btn primary" href="https://telegram.org/faq" target="_blank" rel="noopener noreferrer">Official Telegram FAQ ↗</a>
+          <a class="btn subtle" href="https://telegram.org/support" target="_blank" rel="noopener noreferrer">Telegram Support ↗</a>
+        </div>
+        <p class="hint" style="margin-top:14px">Security reminder: never share Telegram login codes, two-step verification passwords, API hashes, QR sign-in codes, or session files. Support staff and this dashboard do not need your login code. Avoid third-party account-recovery services that promise guaranteed access.</p>
+      </section>
       <footer>Relay · local control panel · isolated per user · credentials are never rendered · respect Telegram's Terms of Service</footer>
     </div>
   </div>
